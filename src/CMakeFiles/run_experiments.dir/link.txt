@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -g3 -pedantic -fopenmp -std=gnu++17 -g  -lboost_date_time -fopenmp -std=gnu++17 CMakeFiles/run_experiments.dir/run_experiments.cpp.o -o run_experiments  Graph/libgraph.a 
