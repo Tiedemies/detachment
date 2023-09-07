@@ -24,6 +24,7 @@ endif()
 
 add_subdirectory(Graph)
 add_subdirectory(Utils)
+add_subdirectory(Algorithms)
 add_executable(run_experiments run_experiments.cpp)
 
 install(TARGETS run_experiments DESTINATION ../${CMAKE_BUILD_TYPE})
@@ -31,4 +32,5 @@ install(TARGETS run_experiments DESTINATION ../${CMAKE_BUILD_TYPE})
 target_link_libraries(run_experiments
   graph
   random 
+  algorithms
 )

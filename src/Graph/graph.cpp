@@ -111,6 +111,9 @@ namespace graph
     _circles = rhs._circles;
     _probs = rhs._probs;
     _adjacent = rhs._adjacent;
+    _num_nodes = rhs._num_nodes;
+    _circle_of_node = rhs._circle_of_node;
+
   }
   
   Graph::~Graph(void)
@@ -207,13 +210,38 @@ namespace graph
     }
     epoi = epoi/total_sims;
     return epoi;  
-  } 
-  
+  }
+
+    
   // Detachment operator
   Graph 
   Graph::detach(int u, int C) const
   {
-    // void 
+    Graph other = *this;
+    auto conit = std::find(other._circle_of_node[u].begin(), other._circle_of_node[u].end(), C);
+    if (conit != other._circle_of_node[u].end()) //the element was not found
+    {
+      other._circle_of_node[u].erase(conit);
+    }
+    auto cinit = std::find(other._circles[C].begin(), other._circles[C].end(), u);
+    if (cinit != other._circles[C].end()) //the element was not found
+    {
+      other._circles[C].erase(cinit);
+    }
+    for (int v: other._circles[C])
+    {
+      auto nodit = std::find(other._adjacent[v].begin(), other._adjacent[v].end(),u);
+      if (nodit != other._adjacent[v].end())
+      {
+        other._adjacent[v].erase(nodit);
+      }
+      auto adit = std::find(other._adjacent[u].begin(), other._adjacent[u].end(), v);
+      if (adit != other._adjacent[u].end())
+      {
+        other._adjacent[u].erase(adit);
+      }
+    }
+    return other;
   }
 
   // Probability (defunct now)
@@ -237,10 +265,14 @@ namespace graph
   {
     _adjacent.clear();
     _adjacent.resize(_num_nodes);
-    for (auto c: _circles)
+    _circle_of_node.clear();
+    _circle_of_node.resize(_num_nodes);
+    for (int i = 0; i <= _circles.size(); ++i)
     {
+      auto c = _circles[i];
       for (int u: c)
       {
+        _circle_of_node[u].push_back(i);
         for (int v: c)
         {
           if (u == v)

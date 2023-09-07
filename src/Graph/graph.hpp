@@ -32,7 +32,8 @@ namespace graph
       double EPOI(int=1000,bool=false) const; 
       Graph detach(int, int) const;
       double get_prob(int,int) const;
-      
+      // DMP Epoi
+      double DMP_EPOI(bool=false) const;
 
       // Print to file name 
       void print(std::string);
@@ -42,6 +43,7 @@ namespace graph
       int _num_nodes;
       size_t Key(const int&, const int&) const; 
       std::vector<std::vector<int>> _circles;
+      std::vector<std::vector<int>> _circle_of_node;
       std::vector<std::unordered_set<int>> _adjacent; 
       std::vector<double> _initial_probabilities; 
       std::unordered_map<size_t, double> _probs; 
