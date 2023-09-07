@@ -30,5 +30,5 @@ install(TARGETS run_experiments DESTINATION ../${CMAKE_BUILD_TYPE})
 
 target_link_libraries(run_experiments
   graph
-  random
+  random 
 )

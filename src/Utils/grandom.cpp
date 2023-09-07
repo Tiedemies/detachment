@@ -1,5 +1,5 @@
 #include<random>
-#include "h_random.hpp"
+#include "grandom.h"
 #include <boost/math/distributions.hpp>
 #include <boost/math/distributions/beta.hpp>
 #include <chrono>
