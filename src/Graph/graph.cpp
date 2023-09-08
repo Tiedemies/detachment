@@ -46,9 +46,13 @@ namespace graph
       _circles.push_back(insiders);
       inp >> cnum;
     }
+    //std::cerr << "instantiate\n";
     instantiate();
+    //std::cerr << "clean up\n";
     clean_up();
+    //std::cerr << "instantiate again\n";
     instantiate(); 
+    //std::cerr << "randomize\n";
     randomize();
   }
 
@@ -123,8 +127,9 @@ namespace graph
 
   // Singleton spread. 
   std::vector<bool>
-  Graph::spread(int in) const
+  Graph::spread(int in, std::unordered_map<size_t,double>& previous_results) const
   {
+    bool clear = previous_results.empty();
     // Precondition
     BOOST_ASSERT(in >= 0);
     BOOST_ASSERT((size_t) in < _circles.size());
@@ -150,12 +155,35 @@ namespace graph
       for (int v: _adjacent.at(u))
       {
         if (output[v]) continue;
-        if (rnd.get() < _probs.at(Key(u,v)))
+        size_t k = Key(u,v); 
+        double rndn;
+        if (!clear)
+        {
+          auto pr_it = previous_results.find(k);
+          if (pr_it != previous_results.end())
+          {
+            rndn = pr_it->second;
+          }
+          else
+          {
+            rndn = rnd.get();
+          }  
+        }
+        else 
+        {
+          rndn = rnd.get();
+          previous_results[k] = 1-rndn; 
+        }
+        if (rndn < _probs.at(Key(u,v)))
         {
           output[v] = true;
           infected.push_back(v);
         }
       }
+    }
+    if (clear)
+    {
+      previous_results.clear();
     }
     return output; 
   }
@@ -170,15 +198,25 @@ namespace graph
     #pragma omp parallel for shared(activations)
     for(int j = 0; j < n; ++j)
     {
-      auto res = spread(i);
+      std::unordered_map<size_t,double> dies; 
+      auto res = spread(i,dies);
+      auto res2 = spread(i,dies);
       for (int k = 0; k < _num_nodes; ++k)
       {
         if (res[k])
         {
           #pragma omp critical
           {
-            activations.at(k) += 1.0/n;   
+            activations.at(k) += 0.5/n;   
           }
+        }
+        if (res2[k])
+        {
+           #pragma omp critical
+          {
+            activations.at(k) += 0.5/n;   
+          }
+
         }
       }
     }
@@ -199,11 +237,44 @@ namespace graph
       #pragma omp parallel for shared(epoi)
       for (int j = 0; j < sims; ++j)
       {
-        auto res = spread(i);
-        int nn = (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
+        std::unordered_map<size_t,double> results;
+        auto res = spread(i,results);
+        double nn = (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
+        res = spread(i,results);
+        nn += (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
         #pragma omp critical
         {
-          poi += ((double) nn)/((double) (_num_nodes - _circles.at(i).size())); 
+          poi += (nn/2)/((double) (_num_nodes - _circles.at(i).size())); 
+        }
+      }
+      epoi = epoi+poi;
+    }
+    epoi = epoi/total_sims;
+    return epoi;  
+  }
+
+  // Calculate epoi 
+  double 
+  Graph::numeric_EPOI(int n,bool probs) const
+  {
+    int total_sims = 0;
+    double epoi = 0.0;
+    for(int i =0; i < (int) _circles.size(); ++i)
+    {
+      int sims = (int) (probs?(_initial_probabilities.at(i) * n): (n/_circles.size()));
+      total_sims += sims; 
+      double poi = 0.0;
+      #pragma omp parallel for shared(epoi)
+      for (int j = 0; j < sims; ++j)
+      {
+        std::unordered_map<size_t,double> results;
+        auto res = numeric_spread(i,results);
+        double nn = (double) (std::accumulate(res.begin(), res.end(), 0.0)) - _circles.at(i).size();
+        res = numeric_spread(i,results);
+        nn += (double) (std::accumulate(res.begin(), res.end(), 0.0)) - _circles.at(i).size();
+        #pragma omp critical
+        {
+          poi += (nn/2)/((double) (_num_nodes - _circles.at(i).size())); 
         }
       }
       epoi = epoi+poi;
@@ -267,12 +338,14 @@ namespace graph
     _adjacent.resize(_num_nodes);
     _circle_of_node.clear();
     _circle_of_node.resize(_num_nodes);
-    for (int i = 0; i <= _circles.size(); ++i)
+    for (int i = 0; i < _circles.size(); ++i)
     {
       auto c = _circles[i];
       for (int u: c)
       {
+        // std::cerr << "u;" << u << ", i;" << i << "\n";
         _circle_of_node[u].push_back(i);
+        // std::cerr << "done\n";
         for (int v: c)
         {
           if (u == v)
@@ -400,5 +473,73 @@ namespace graph
     }
     _num_nodes = main_component.size(); 
     _circles = std::move(new_circles);
+  }
+
+  // Singleton spread. 
+  std::vector<double>
+  Graph::numeric_spread(int in, std::unordered_map<size_t,double>& previous_results) const
+  {
+    bool clear = previous_results.empty();
+    // Precondition
+    BOOST_ASSERT(in >= 0);
+    BOOST_ASSERT((size_t) in < _circles.size());
+  
+    std::vector<double> output(_num_nodes,0.0);
+    std::vector<bool> found(_num_nodes,false); 
+    if (_circles[in].empty())
+    {
+      return output; 
+    }
+
+    std::vector<int> infected;
+    infected.reserve(_num_nodes); 
+    std::copy(_circles.at(in).begin(), _circles.at(in).end(), std::back_inserter(infected));
+    for (int i: infected)
+    {
+      output[i] = 1.0;
+      found[i] = 0.0;
+    }
+    util::Random rnd;
+    while(infected.size() > 0)
+    {
+      int u = infected.back();
+      infected.pop_back();
+      for (int v: _adjacent.at(u))
+      {
+        size_t k = Key(u,v); 
+        double rndn;
+        if (!clear)
+        {
+          auto pr_it = previous_results.find(k);
+          if (pr_it != previous_results.end())
+          {
+            rndn = pr_it->second;
+          }
+          else
+          {
+            rndn = rnd.get();
+          }  
+        }
+        else 
+        {
+          rndn = rnd.get();
+          previous_results[k] = 1-rndn; 
+        }
+        output[v] = std::min(1.0, output[v] + (1-output[v])*(_probs.at(k)*output[u]));
+        if (rndn < _probs.at(k))
+        {
+          if (!found[v])
+          {
+            infected.push_back(v);
+            found[v] = true; 
+          }
+        }
+      }
+    }
+    if (clear)
+    {
+      previous_results.clear();
+    }
+    return output; 
   }
 }

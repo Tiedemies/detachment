@@ -7,6 +7,13 @@
 #include<unordered_map>
 #include<unordered_set>
 
+// Forward declaration
+namespace algo
+{
+  class GreedyOptimizer;
+}
+
+
 namespace graph
 {
   // Graph class supports at most 32 bits
@@ -25,9 +32,12 @@ namespace graph
       ~Graph(void);
 
       // Calculate a single spread pattern
-      std::vector<bool> spread(int) const;
+      std::vector<bool> spread(int, std::unordered_map<size_t,double>&) const;
       //  Calculate activation probabilities for single circle
       std::vector<double> activation_probs(int,int=1000) const;
+
+      //  Calculate activation heuristic probabilities for single circle
+      std::vector<double> numeric_spread(int,std::unordered_map<size_t,double>&) const;
       // Calculate EPOI, (number of simulations, use initial_probabilities distribtion)
       double EPOI(int=1000,bool=false) const; 
       Graph detach(int, int) const;
@@ -35,9 +45,15 @@ namespace graph
       // DMP Epoi
       double DMP_EPOI(bool=false) const;
 
+      // Calculate EPOI, (number of simulations, use initial_probabilities distribtion)
+      double numeric_EPOI(int=1000,bool=false) const; 
+
       // Print to file name 
       void print(std::string);
       void printcsv(std::string,bool=false);
+
+      // Friends and family
+      friend class algo::GreedyOptimizer;
 
     private:
       int _num_nodes;

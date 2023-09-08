@@ -3,13 +3,10 @@
 
 namespace algo
 {
-  graph::Graph greedy(int n, graph::Graph source)
+
+  GreedyOptimizer::GreedyOptimizer(graph::Graph g): _parent(g)
   {
-    graph::Graph target = source;
-    for (int i = 0; i <= n; ++i)
-    {
-      // void
-    }
-    return target;
+    //void
   }
+
 }
