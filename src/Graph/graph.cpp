@@ -156,7 +156,7 @@ namespace graph
       {
         if (output[v]) continue;
         size_t k = Key(u,v); 
-        double rndn;
+        double rndn =0.0;
         if (!clear)
         {
           auto pr_it = previous_results.find(k);
@@ -225,26 +225,39 @@ namespace graph
       
   // Calculate epoi 
   double 
-  Graph::EPOI(int n,bool probs) const
+  Graph::EPOI(int n,bool probs, std::vector<double>& num_activated) const
   {
     int total_sims = 0;
     double epoi = 0.0;
+    
+    // If verbose, we use numbers activated 
+    bool verbose = !num_activated.empty(); 
+    
     for(int i =0; i < (int) _circles.size(); ++i)
     {
-      int sims = (int) (probs?(_initial_probabilities.at(i) * n): (n/_circles.size()));
+      int sims = n;
       total_sims += sims; 
       double poi = 0.0;
-      #pragma omp parallel for shared(epoi)
+      #pragma omp parallel for shared(epoi,num_activated)
       for (int j = 0; j < sims; ++j)
       {
         std::unordered_map<size_t,double> results;
         auto res = spread(i,results);
-        double nn = (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
+        double nn1 = (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
         res = spread(i,results);
-        nn += (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
+        double nn2 = (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
+        double nn = nn1+nn2;
+        double marginal = (nn/2)/((double) (_num_nodes - _circles.at(i).size())); 
         #pragma omp critical
         {
-          poi += (nn/2)/((double) (_num_nodes - _circles.at(i).size())); 
+          poi +=  marginal;
+        }
+        if (verbose)
+        {
+          #pragma omp critical
+          {
+            num_activated[j] += marginal/_circles.size();
+          }
         }
       }
       epoi = epoi+poi;

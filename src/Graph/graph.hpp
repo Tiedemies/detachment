@@ -17,6 +17,7 @@ namespace algo
 namespace graph
 {
   // Graph class supports at most 32 bits
+  static std::vector<double> DEFAULT_VECTOR;
   class Graph
   {
     public:
@@ -39,13 +40,13 @@ namespace graph
       //  Calculate activation heuristic probabilities for single circle
       std::vector<double> numeric_spread(int,std::unordered_map<size_t,double>&) const;
       // Calculate EPOI, (number of simulations, use initial_probabilities distribtion)
-      double EPOI(int=1000,bool=false) const; 
+      double EPOI(int=1000,bool=false,std::vector<double>& =DEFAULT_VECTOR) const; 
       Graph detach(int, int) const;
       double get_prob(int,int) const;
       // DMP Epoi
       double DMP_EPOI(bool=false) const;
 
-      // Calculate EPOI, (number of simulations, use initial_probabilities distribtion)
+      // Calculate EPOI, (number of simulations, use initial_probabilities distribtion, verbose [i.e., count deviation])
       double numeric_EPOI(int=1000,bool=false) const; 
 
       // Print to file name 

@@ -13,17 +13,17 @@ int main()
   std::cerr << "bar";
   double avg = 0.0;
   double div = 0;
-  for (int n = 1000; n < 200000; n = n + 200)
+  for (int n = 100; n < 20000; n = n + 100)
   {
     auto clock_start = std::chrono::system_clock::now();
-    double ep = test1.numeric_EPOI(n); 
+    std::vector<double> result(n,0.0);
+    double ep = test1.EPOI(n,false,result); 
     auto clock_now = std::chrono::system_clock::now();
     double ct = double(std::chrono::duration_cast <std::chrono::microseconds>(clock_now - clock_start).count());
-    std::cerr << n << ": " << ct << "\n";
-
-    avg = (div*avg + ep) / (div + 1);
-    ++div; 
-    std::cout << n << ", " << ep << "," << avg << "\n";
+    //std::cerr << n << ": " << ct << "\n";
+  
+    auto interval = algo::confidence_intervals(result,0.95);
+    std::cout << n << ", " << interval.first << "," << ep << "," << interval.second << "\n";
     std::cout.flush();
   } 
   return 0;
