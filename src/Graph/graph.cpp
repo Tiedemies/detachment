@@ -46,13 +46,13 @@ namespace graph
       _circles.push_back(insiders);
       inp >> cnum;
     }
-    //std::cerr << "instantiate\n";
+    std::cerr << "instantiate\n";
     instantiate();
-    //std::cerr << "clean up\n";
+    std::cerr << "clean up\n";
     clean_up();
-    //std::cerr << "instantiate again\n";
+    std::cerr << "instantiate again\n";
     instantiate(); 
-    //std::cerr << "randomize\n";
+    std::cerr << "randomize\n";
     randomize();
   }
 
