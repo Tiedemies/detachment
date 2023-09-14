@@ -236,7 +236,7 @@ namespace graph
     for(int i =0; i < (int) _circles.size(); ++i)
     {
       int sims = n;
-      total_sims += sims; 
+      total_sims += sims;
       double poi = 0.0;
       #pragma omp parallel for shared(epoi,num_activated)
       for (int j = 0; j < sims; ++j)
@@ -260,7 +260,7 @@ namespace graph
           }
         }
       }
-      epoi = epoi+poi;
+      epoi += poi;
     }
     epoi = epoi/total_sims;
     return epoi;  

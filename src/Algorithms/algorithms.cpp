@@ -8,6 +8,9 @@
 namespace algo
 {
 
+  static double previous_mu = 0.0;
+  static double previous_sigma = 0.0;
+
   GreedyOptimizer::GreedyOptimizer(graph::Graph g): _parent(g)
   {
     //void
@@ -54,7 +57,11 @@ namespace algo
   {
     size_t n = input.size();
     double s2 = variance(input,mu);
-    std::cerr << "mu: " << mu << "\n";
+    double sigma = std::sqrt(s2);
+    std::cerr << "mu: " << mu << " sigma: " << sigma << "\n";
+    std::cerr << "mu-difference: " << mu - previous_mu << ", sigma-difference: " << sigma - previous_sigma << "\n";
+    previous_mu = mu; 
+    previous_sigma =  sigma;
     boost::math::normal_distribution nd;
     double z = boost::math::quantile(nd, 1.0 - ( (1-p)/2.0)); 
     double delta = std::sqrt(s2 / static_cast<double>(n))  * z;
