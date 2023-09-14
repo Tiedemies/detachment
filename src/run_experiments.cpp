@@ -10,21 +10,22 @@ int main()
   graph::Graph test1("../data/company_dict_insiders.txt");
   //graph::Graph test2(105, 10, 0.5);
   // test1.printcsv("big.csv");
-  std::cerr << "bar";
-  double avg = 0.0;
-  double div = 0;
-  for (int n = 100; n < 20000; n = n + 100)
+  algo::GreedyOptimizer optim(test1);
+  int tests = 5;
+  for (int k = 1; k < 8; ++k)
   {
-    auto clock_start = std::chrono::system_clock::now();
-    std::vector<double> result(n,0.0);
-    double ep = test1.EPOI(n,false,result); 
-    auto clock_now = std::chrono::system_clock::now();
-    double ct = double(std::chrono::duration_cast <std::chrono::microseconds>(clock_now - clock_start).count());
-    //std::cerr << n << ": " << ct << "\n";
-  
-    auto interval = algo::confidence_intervals(result,0.95);
-    std::cout << n << ", " << interval.first << "," << ep << "," << interval.second << "\n";
-    std::cout.flush();
-  } 
+    std::cout << k << ": \n";
+    for (int i = 0; i < tests; ++i)
+    {
+      optim.optimize(k);
+      std::cout << optim._base_epoi << ", " << optim._result_epoi << "\n";
+      for (auto cpair: optim._detached)
+      {
+        std::cout << "(" << cpair.first << "," << cpair.second << ")";
+      }
+      std::cout << "\n **** \n";
+    }
+    std::cout << "************** \n";
+  }
   return 0;
 }

@@ -3,6 +3,7 @@
 
 #include<vector>
 #include<numeric>
+#include<set>
 #include<unordered_map>
 #include "../Graph/graph.hpp"
 
@@ -16,11 +17,15 @@ namespace algo
       GreedyOptimizer(graph::Graph);
       void optimize(int=1);
       const graph::Graph& get_result();
-
+      double _result_epoi; 
+      double _base_epoi;
+      std::set<std::pair<int,int>> _detached; 
       void set_iterations();
     private:
+      void pre_process();
       const graph::Graph& _parent; 
-      graph::Graph _result;
+      graph::Graph _result; 
+       
   };
 
   /// Estimate mean

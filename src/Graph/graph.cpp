@@ -112,6 +112,7 @@ namespace graph
   // Copy constructor to make a copy
   Graph::Graph(const Graph& rhs)
   {
+    _num_nodes = rhs._num_nodes;
     _circles = rhs._circles;
     _probs = rhs._probs;
     _adjacent = rhs._adjacent;
