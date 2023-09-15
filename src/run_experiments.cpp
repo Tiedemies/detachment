@@ -60,6 +60,6 @@ void speed_test()
 
 int main()
 {
-  speed_test(); 
+  run_test(); 
   return 0;
 }
