@@ -2,11 +2,11 @@
 #include<iostream>
 #include <chrono>
 #include "Algorithms/algorithms.hpp"
+#include "Utils/utils.hpp"
 
 
-int main()
+void run_test()
 {
-  std::cerr << "foo";
   graph::Graph test1("../data/company_dict_insiders.txt");
   //graph::Graph test2(105, 10, 0.5);
   // test1.printcsv("big.csv");
@@ -17,7 +17,9 @@ int main()
     std::cout << k << ": \n";
     for (int i = 0; i < tests; ++i)
     {
+      DEBUG("Start optimize for " << k);
       optim.optimize(k);
+      DEBUG("Optimization complete \n");
       std::cout << optim._base_epoi << ", " << optim._result_epoi << "\n";
       for (auto cpair: optim._detached)
       {
@@ -27,5 +29,10 @@ int main()
     }
     std::cout << "************** \n";
   }
+}
+
+int main()
+{
+  run_test(); 
   return 0;
 }

@@ -57,13 +57,19 @@ namespace graph
       friend class algo::GreedyOptimizer;
 
     private:
-      int _num_nodes;
+      
       size_t Key(const int&, const int&) const; 
+      
+      // Copyable attributes:
+      int _num_nodes;
       std::vector<std::vector<int>> _circles;
       std::vector<std::vector<int>> _circle_of_node;
       std::vector<std::unordered_set<int>> _adjacent; 
       std::vector<double> _initial_probabilities; 
       std::unordered_map<size_t, double> _probs; 
+      // Total 6.
+
+
       // make circles into connections parameter is max number
       void instantiate();
       // Randomize the connections, i.e, give each existing connection a coefficient from beta distribution.

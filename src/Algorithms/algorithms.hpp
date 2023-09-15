@@ -14,7 +14,7 @@ namespace algo
   {
     public:
       GreedyOptimizer() = delete;
-      GreedyOptimizer(graph::Graph);
+      GreedyOptimizer(graph::Graph&);
       void optimize(int=1);
       const graph::Graph& get_result();
       double _result_epoi; 

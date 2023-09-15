@@ -7,6 +7,7 @@
 #include<set>
 #include<algorithm>
 #include "../Utils/grandom.h"
+#include "../Utils/utils.hpp"
 
 namespace graph
 {
@@ -46,13 +47,13 @@ namespace graph
       _circles.push_back(insiders);
       inp >> cnum;
     }
-    std::cerr << "instantiate\n";
+    DEBUG("instantiate");
     instantiate();
-    std::cerr << "clean up\n";
+    DEBUG("clean up");
     clean_up();
-    std::cerr << "instantiate again\n";
+    DEBUG("instantiate again");
     instantiate(); 
-    std::cerr << "randomize\n";
+    DEBUG("randomize");
     randomize();
   }
 
@@ -102,7 +103,7 @@ namespace graph
           continue;
         }
         _circles[j].push_back(k);
-        std::cerr << "created 1\n";
+        DEBUG("created 1\n");
       }
     }
     instantiate();
@@ -110,15 +111,9 @@ namespace graph
   }
 
   // Copy constructor to make a copy
-  Graph::Graph(const Graph& rhs)
+  Graph::Graph(const Graph& rhs): _num_nodes(rhs._num_nodes), _circles(rhs._circles), _adjacent(rhs._adjacent), _circle_of_node(rhs._circle_of_node),_probs(rhs._probs)
   {
-    _num_nodes = rhs._num_nodes;
-    _circles = rhs._circles;
-    _probs = rhs._probs;
-    _adjacent = rhs._adjacent;
-    _num_nodes = rhs._num_nodes;
-    _circle_of_node = rhs._circle_of_node;
-
+    // Void
   }
   
   Graph::~Graph(void)
@@ -136,7 +131,7 @@ namespace graph
     BOOST_ASSERT((size_t) in < _circles.size());
   
     std::vector<bool> output(_num_nodes,false);
-    if (_circles[in].empty())
+    if (_circles.at(in).empty())
     {
       return output; 
     }
@@ -146,7 +141,19 @@ namespace graph
     std::copy(_circles.at(in).begin(), _circles.at(in).end(), std::back_inserter(infected));
     for (int i: infected)
     {
-      output[i] = true;
+      try
+      {
+        output.at(i) = true;
+      }
+      catch(const std::exception& e)
+      {
+        DEBUG(e.what() << " at infection loop");
+        DEBUG("in: " << in);
+        DEBUG(_circles.at(in).size());
+        DEBUG(infected.size());
+        throw e;
+      }
+      
     }
     util::Random rnd;
     while(infected.size() > 0)
@@ -155,7 +162,20 @@ namespace graph
       infected.pop_back();
       for (int v: _adjacent.at(u))
       {
-        if (output[v]) continue;
+        try
+        {
+          if (output.at(v)) continue;
+        }
+        catch(const std::exception& e)
+        {
+          DEBUG(e.what() << " at adjacency loop");
+          for (auto vv: _adjacent.at(u))
+          {
+            DEBUG(vv << ",");
+          }
+          throw e; 
+        }
+        
         size_t k = Key(u,v); 
         double rndn =0.0;
         if (!clear)
@@ -177,12 +197,12 @@ namespace graph
         }
         if (rndn < _probs.at(Key(u,v)))
         {
-          output[v] = true;
+          output.at(v) = true;
           infected.push_back(v);
         }
       }
     }
-    if (clear)
+    if (!clear)
     {
       previous_results.clear();
     }
@@ -232,8 +252,9 @@ namespace graph
     double epoi = 0.0;
     
     // If verbose, we use numbers activated 
-    bool verbose = !num_activated.empty(); 
+    bool verbose = (num_activated.size() == (size_t) n); 
     
+    DEBUG("start base simulation, verbose: " << verbose);
     for(int i =0; i < (int) _circles.size(); ++i)
     {
       int sims = n;
@@ -257,7 +278,7 @@ namespace graph
         {
           #pragma omp critical
           {
-            num_activated[j] += marginal/_circles.size();
+            num_activated.at(j) += marginal/_circles.size();
           }
         }
       }
