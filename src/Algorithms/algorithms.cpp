@@ -81,7 +81,7 @@ namespace algo
     DEBUG("working with " << n << " nodes");
     std::vector<double> result(2*base_sim,0.0);
     DEBUG("establishing baseline");
-    _base_epoi = _parent.EPOI(2*base_sim, false, result);
+    _base_epoi = _parent.EPOI_num(2*base_sim, false, result);
     DEBUG("calculating intervals");
     const auto ref_interval = confidence_intervals(result,0.99);
     double cur_min = _base_epoi; 
@@ -89,7 +89,6 @@ namespace algo
     _result = _parent;
     graph::Graph temporary_min = _parent;
     _detached.clear(); 
-    
     for (int i = 0; i < k; ++i)
     {
       std::pair<int,int> rpair; 
@@ -103,7 +102,7 @@ namespace algo
         for (int c: _result._circle_of_node[j])
         {
           graph::Graph temp = _result.detach(j,c);
-          double comp_epoi = temp.EPOI(base_sim,false);
+          double comp_epoi = temp.EPOI_num(base_sim,false);
           if (comp_epoi < cur_min)
           {
             temporary_min = temp;

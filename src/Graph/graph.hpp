@@ -34,6 +34,9 @@ namespace graph
 
       // Calculate a single spread pattern
       std::vector<bool> spread(int, std::unordered_map<size_t,double>&) const;
+
+      // Calculate a single spread pattern
+      int spread_num(int, std::vector<double>&) const;
       //  Calculate activation probabilities for single circle
       std::vector<double> activation_probs(int,int=1000) const;
 
@@ -47,7 +50,7 @@ namespace graph
       double DMP_EPOI(bool=false) const;
 
       // Calculate EPOI, (number of simulations, use initial_probabilities distribtion, verbose [i.e., count deviation])
-      double numeric_EPOI(int=1000,bool=false) const; 
+      double EPOI_num(int=1000,bool=false, std::vector<double>& =DEFAULT_VECTOR) const; 
 
       // Print to file name 
       void print(std::string);
@@ -62,11 +65,15 @@ namespace graph
       
       // Copyable attributes:
       int _num_nodes;
+      int _num_edges;
       std::vector<std::vector<int>> _circles;
       std::vector<std::vector<int>> _circle_of_node;
       std::vector<std::unordered_set<int>> _adjacent; 
       std::vector<double> _initial_probabilities; 
       std::unordered_map<size_t, double> _probs; 
+      std::vector<double> _prob_vector; 
+      std::vector<int> _adjacency_vector;
+      std::vector<int> _node_places;
       // Total 6.
 
 
@@ -77,6 +84,7 @@ namespace graph
       void randomize(double=20,double=80);
       std::vector<double> _activations; 
       void clean_up();
+      void validate();
   };
 }
 
