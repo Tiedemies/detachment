@@ -33,29 +33,21 @@ void run_test()
 
 void speed_test()
 {
-  int n = 100;
-  std::vector<double> result(n,0.0);
-  graph::Graph test1("../data/company_dict_insiders.txt");
+  for (int n =10; n < 10001;n=n*10)
+  {
+    std::vector<double> result(n,0.0);
+    graph::Graph test1("../data/company_dict_insiders.txt");
 
-  auto start_time = std::chrono::system_clock::now();
-  double ep = test1.EPOI(n,false,result);
-  auto end_time = std::chrono::system_clock::now();
-  std::chrono::duration<double> elapsed_time = end_time - start_time;
-  std::cout << "epoi Elapsed time: " << elapsed_time.count() << "s" << std::endl;
-  auto interval = algo::confidence_intervals(result,0.99);
-  std::cout << interval.first << " -- " << ep << " -- " << interval.second << std::endl;
-
-  result.clear();
-  result.resize(n,0.0);
-
-  start_time = std::chrono::system_clock::now();
-  ep = test1.EPOI_num(n,false,result);
-  end_time = std::chrono::system_clock::now();
-  elapsed_time = end_time - start_time;
-  std::cout << "epoi_num Elapsed time: " << elapsed_time.count() << "s" << std::endl;
-  interval = algo::confidence_intervals(result,0.99);
-  std::cout << interval.first << " -- " << ep << " -- " << interval.second << std::endl;
+    auto start_time = std::chrono::system_clock::now();
+    double ep = test1.EPOI_num(n,false,result);
+    auto end_time = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_time = end_time - start_time;
+    std::cout << "epoi " << n << " Elapsed time: " << elapsed_time.count() << "s" << std::endl;
+    auto interval = algo::confidence_intervals(result,0.99);
+    std::cout << interval.first << " -- " << ep << " -- " << interval.second << std::endl;
+  }
 }
+
 
 
 int main()

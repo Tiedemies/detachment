@@ -101,19 +101,20 @@ namespace algo
         }
         for (int c: _result._circle_of_node[j])
         {
-          graph::Graph temp = _result.detach(j,c);
-          double comp_epoi = temp.EPOI_num(base_sim,false);
+          _result.detach(j,c);
+          double comp_epoi = _result.EPOI_num(base_sim,false);
           if (comp_epoi < cur_min)
           {
-            temporary_min = temp;
             cur_min = comp_epoi;
             rpair.first = j; rpair.second = c; 
           }
+          _result.undo(); 
         }
       }
-      _result = temporary_min;
+      _result.detach(rpair.first,rpair.second);
       _result_epoi = cur_min; 
       _detached.insert(rpair); 
+      _result = _result.clean_copy(); 
     }
   }
 

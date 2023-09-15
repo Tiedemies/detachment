@@ -114,7 +114,7 @@ namespace graph
   }
 
   // Copy constructor to make a copy
-  Graph::Graph(const Graph& rhs): _num_nodes(rhs._num_nodes), _circles(rhs._circles), _adjacent(rhs._adjacent), _circle_of_node(rhs._circle_of_node),_probs(rhs._probs),_adjacency_vector(rhs._adjacency_vector), _node_places(rhs._node_places),_prob_vector(rhs._prob_vector)
+  Graph::Graph(const Graph& rhs): _num_nodes(rhs._num_nodes), _circles(rhs._circles), _circle_of_node(rhs._circle_of_node), _adjacency_vector(rhs._adjacency_vector), _node_places(rhs._node_places),_prob_vector(rhs._prob_vector)
   {
     // Void
   }
@@ -122,94 +122,6 @@ namespace graph
   Graph::~Graph(void)
   {
     // void
-  }
-
-  // Singleton spread. 
-  std::vector<bool>
-  Graph::spread(int in, std::unordered_map<size_t,double>& previous_results) const
-  {
-    bool clear = previous_results.empty();
-    // Precondition
-    BOOST_ASSERT(in >= 0);
-    BOOST_ASSERT((size_t) in < _circles.size());
-  
-    std::vector<bool> output(_num_nodes,false);
-    if (_circles.at(in).empty())
-    {
-      return output; 
-    }
-
-    std::vector<int> infected;
-    infected.reserve(_num_nodes); 
-    std::copy(_circles.at(in).begin(), _circles.at(in).end(), std::back_inserter(infected));
-    for (int i: infected)
-    {
-      try
-      {
-        output.at(i) = true;
-      }
-      catch(const std::exception& e)
-      {
-        DEBUG(e.what() << " at infection loop");
-        DEBUG("in: " << in);
-        DEBUG(_circles.at(in).size());
-        DEBUG(infected.size());
-        throw e;
-      }
-      
-    }
-    util::Random rnd;
-    while(infected.size() > 0)
-    {
-      int u = infected.back();
-      infected.pop_back();
-      for (int v: _adjacent.at(u))
-      {
-        try
-        {
-          if (output.at(v)) continue;
-        }
-        catch(const std::exception& e)
-        {
-          DEBUG(e.what() << " at adjacency loop");
-          DEBUG( "u:" << u);
-          DEBUG( "v:" << v);
-          DEBUG( "output size " << output.size());
-;          
-          throw e; 
-        }
-        
-        size_t k = Key(u,v); 
-        double rndn =0.0;
-        if (!clear)
-        {
-          auto pr_it = previous_results.find(k);
-          if (pr_it != previous_results.end())
-          {
-            rndn = pr_it->second;
-          }
-          else
-          {
-            rndn = rnd.get();
-          }  
-        }
-        else 
-        {
-          rndn = rnd.get();
-          previous_results[k] = 1-rndn; 
-        }
-        if (rndn < _probs.at(Key(u,v)))
-        {
-          output.at(v) = true;
-          infected.push_back(v);
-        }
-      }
-    }
-    if (!clear)
-    {
-      previous_results.clear();
-    }
-    return output; 
   }
 
   // Singleton spread. 
@@ -246,7 +158,7 @@ namespace graph
        for (int j = _node_places[u];j <_node_places[u+1];++j)
       {
         int v = _adjacency_vector[j];
-        if (found[v]) continue;
+        if (v < 0 || found[v]) continue;
         double die = (clear || std::isnan(previous[j]))?rnd.get():previous[j];
         if (die < _prob_vector[j])
         {    
@@ -258,87 +170,7 @@ namespace graph
     }
     return output; 
   }
-
-  // Calculate activation probabilities for circle i
-  std::vector<double> 
-  Graph::activation_probs(int i, int n) const
-  {
-    BOOST_ASSERT(0 <= i);
-    BOOST_ASSERT((size_t) i < _circles.size());
-    std::vector<double> activations(_num_nodes,0.0);
-    #pragma omp parallel for shared(activations)
-    for(int j = 0; j < n; ++j)
-    {
-      std::unordered_map<size_t,double> dies; 
-      auto res = spread(i,dies);
-      auto res2 = spread(i,dies);
-      for (int k = 0; k < _num_nodes; ++k)
-      {
-        if (res[k])
-        {
-          #pragma omp critical
-          {
-            activations.at(k) += 0.5/n;   
-          }
-        }
-        if (res2[k])
-        {
-           #pragma omp critical
-          {
-            activations.at(k) += 0.5/n;   
-          }
-
-        }
-      }
-    }
-    return activations; 
-  }
       
-  // Calculate epoi 
-  double 
-  Graph::EPOI(int n,bool probs, std::vector<double>& num_activated) const
-  {
-    int total_sims = 0;
-    double epoi = 0.0;
-    
-    // If verbose, we use numbers activated 
-    bool verbose = (num_activated.size() == (size_t) n); 
-    
-    DEBUG("start base simulation, verbose: " << verbose);
-    for(int i =0; i < (int) _circles.size(); ++i)
-    {
-      int sims = n;
-      total_sims += sims;
-      double poi = 0.0;
-      #pragma omp parallel for shared(epoi,num_activated)
-      for (int j = 0; j < sims; ++j)
-      {
-        std::unordered_map<size_t,double> results;
-        auto res = spread(i,results);
-        double nn1 = (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
-        res = spread(i,results);
-        double nn2 = (double) (std::count(res.begin(), res.end(), true)) - _circles.at(i).size();
-        double nn = nn1+nn2;
-        double marginal = (nn/2)/((double) (_num_nodes - _circles.at(i).size())); 
-        #pragma omp critical
-        {
-          poi +=  marginal;
-          //DEBUG(nn);
-        }
-        if (verbose)
-        {
-          #pragma omp critical
-          {
-            num_activated.at(j) += marginal/_circles.size();
-          }
-        }
-      }
-      epoi += poi;
-    }
-    epoi = epoi/total_sims;
-    return epoi;  
-  }
-
  // Calculate epoi, numbers only 
   double 
   Graph::EPOI_num(int n,bool probs, std::vector<double>& num_activated) const
@@ -386,34 +218,73 @@ namespace graph
 
     
   // Detachment operator
-  Graph 
-  Graph::detach(int u, int C) const
+  void 
+  Graph::detach(int u, int C)
   {
-    Graph other = *this;
-    auto conit = std::find(other._circle_of_node[u].begin(), other._circle_of_node[u].end(), C);
-    if (conit != other._circle_of_node[u].end()) //the element was not found
+    BOOST_ASSERT(C >= 0);
+    BOOST_ASSERT(u >= 0);
+    BOOST_ASSERT(C < _circles.size());
+    BOOST_ASSERT(u < _num_nodes);
+    auto c_iter = std::find(_circles.at(C).begin(),_circles.at(C).end(),u);
+    BOOST_ASSERT( c_iter != _circles.at(C).end());
+    auto cn_iter = std::find(_circle_of_node.at(u).begin(),_circle_of_node.at(u).end(),C);
+    BOOST_ASSERT(cn_iter != _circle_of_node.at(u).end());
+    _circles.at(C).erase(c_iter);
+    _circle_of_node.at(u).erase(cn_iter);
+    _detachment_stack.push_back(std::make_pair(u,C));
+    for (int v: _circles[C])
     {
-      other._circle_of_node[u].erase(conit);
-    }
-    auto cinit = std::find(other._circles[C].begin(), other._circles[C].end(), u);
-    if (cinit != other._circles[C].end()) //the element was not found
-    {
-      other._circles[C].erase(cinit);
-    }
-    for (int v: other._circles[C])
-    {
-      auto nodit = std::find(other._adjacent[v].begin(), other._adjacent[v].end(),u);
-      if (nodit != other._adjacent[v].end())
+      for (int i = _node_places[v]; i < _node_places[v+1];++i)
       {
-        other._adjacent[v].erase(nodit);
+        if (_adjacency_vector[i] == u)
+        {
+          _adjacency_vector[i] = -u;
+          break;
+        }
       }
-      auto adit = std::find(other._adjacent[u].begin(), other._adjacent[u].end(), v);
-      if (adit != other._adjacent[u].end())
+      for (int i = _node_places[u]; i < _node_places[u+1]; ++i)
       {
-        other._adjacent[u].erase(adit);
+        if (_adjacency_vector[i] == v)
+        {
+          _adjacency_vector[i] = -v;
+        }
+      
       }
     }
-    return other;
+  }
+
+  void 
+  Graph::undo()
+  {
+    if (_detachment_stack.empty())
+    {
+      return;
+    }
+    auto fpair = _detachment_stack.back();
+    _detachment_stack.pop_back();
+    int u = fpair.first;
+    int C = fpair.second;
+    for (int v: _circles[C])
+    {
+      for (int i = _node_places[v]; i < _node_places[v+1];++i)
+      {
+        if (_adjacency_vector[i] == -u)
+        {
+          _adjacency_vector[i] = u;
+          break;
+        }
+      }
+      for (int i = _node_places[u]; i < _node_places[u+1]; ++i)
+      {
+        if (_adjacency_vector[i] == -v)
+        {
+          _adjacency_vector[i] = v;
+          break;
+        }
+      }
+    }
+    _circles[C].push_back(u);
+    _circle_of_node[u].push_back(C);
   }
 
   // Probability (defunct now)
@@ -435,10 +306,9 @@ namespace graph
   void
   Graph::instantiate()
   {
-    _adjacent.clear();
-    _adjacent.resize(_num_nodes);
     _circle_of_node.clear();
     _circle_of_node.resize(_num_nodes);
+    std::vector<std::vector<int>> adjacent(_num_nodes); 
     for (int i = 0; i < _circles.size(); ++i)
     {
       auto c = _circles[i];
@@ -453,10 +323,8 @@ namespace graph
           {
             continue;
           }
-          _adjacent[u].insert(v);
-          _adjacent[u].insert(v);
+          adjacent[u].push_back(v);
         }
-
       }
     }
     _adjacency_vector.clear();
@@ -465,7 +333,7 @@ namespace graph
     for (int u = 0; u < _num_nodes; ++u)
     {
       _node_places.push_back(_num_edges);
-      for (int v: _adjacent[u])
+      for (int v: adjacent[u])
       {
         _adjacency_vector.push_back(v);
         ++_num_edges;
@@ -478,15 +346,6 @@ namespace graph
   Graph::randomize(double alpha, double beta)
   {
     util::BetaRandom rnd(alpha,beta);
-    for (int i = 0; i < _num_nodes; ++i)
-    {
-      for (int j: _adjacent[i])
-      {
-        double p = rnd.get();
-        size_t key = Key(i,j);
-        _probs[key] = p;
-      }
-    }
     _prob_vector.resize(_num_edges,std::nan(""));
     for (int u = 0; u < _num_nodes;++u)
     {
@@ -494,8 +353,7 @@ namespace graph
       for(int j = _node_places[u]; j < end; ++j)
       {
         int v = _adjacency_vector[j];
-        size_t key = Key(u,v);
-        _prob_vector[j] = _probs[key];
+        _prob_vector[j] = rnd.get();
       }
     }
   }
@@ -522,19 +380,14 @@ namespace graph
     ofs << "source, target, weight \n";
     for (int u = 0; u < _num_nodes; ++u)
     {
-      for(auto v: _adjacent[u])
+      for(int i = _node_places[u];i < _node_places[u+1]; ++i)
       {
+        int v = _adjacency_vector[i];
         if (!directed && v > u)
         {
           continue;
         }
-        double p = 0.1;
-        size_t key = Key(u,v);
-        auto c_it = _probs.find(key);
-        if (c_it != _probs.end())
-        {
-          p = c_it->second; 
-        }
+        double p = _prob_vector[i];
         ofs << u << ", " << v << ", " << p << "\n";
       }
     }
@@ -556,8 +409,9 @@ namespace graph
       {
         int s = Stack.back();
         Stack.pop_back();
-        for (int t: _adjacent[s])
+        for (int i = _node_places[s]; i < _node_places[s+1]; ++i)
         {
+          int t = _adjacency_vector[i];
           auto t_it = found.find(t);
           if (t_it != found.end())
           {
@@ -601,97 +455,39 @@ namespace graph
     _circles = std::move(new_circles);
   }
 
-  // Singleton spread. 
-  std::vector<double>
-  Graph::numeric_spread(int in, std::unordered_map<size_t,double>& previous_results) const
+  Graph
+  Graph::clean_copy() const
   {
-    bool clear = previous_results.empty();
-    // Precondition
-    BOOST_ASSERT(in >= 0);
-    BOOST_ASSERT((size_t) in < _circles.size());
-  
-    std::vector<double> output(_num_nodes,0.0);
-    std::vector<bool> found(_num_nodes,false); 
-    if (_circles[in].empty())
+    Graph newg;
+    newg._num_nodes = _num_nodes;
+    newg._num_edges = 0;
+    newg._adjacency_vector.clear();
+    newg._prob_vector.clear();
+    newg._node_places.clear();
+    newg._circles = _circles;
+    newg._circle_of_node = _circle_of_node; 
+    for (int u = 0; u < _num_nodes; ++u)
     {
-      return output; 
-    }
-
-    std::vector<int> infected;
-    infected.reserve(_num_nodes); 
-    std::copy(_circles.at(in).begin(), _circles.at(in).end(), std::back_inserter(infected));
-    for (int i: infected)
-    {
-      output[i] = 1.0;
-      found[i] = 0.0;
-    }
-    util::Random rnd;
-    while(infected.size() > 0)
-    {
-      int u = infected.back();
-      infected.pop_back();
-      for (int v: _adjacent.at(u))
+      newg._node_places.push_back(newg._num_edges);
+      for (int i = _node_places[u]; i < _node_places[u+1]; ++ i)
       {
-        size_t k = Key(u,v); 
-        double rndn;
-        if (!clear)
+        int v = _adjacency_vector[i];
+        if (v < 0)
         {
-          auto pr_it = previous_results.find(k);
-          if (pr_it != previous_results.end())
-          {
-            rndn = pr_it->second;
-          }
-          else
-          {
-            rndn = rnd.get();
-          }  
+          continue;
         }
-        else 
-        {
-          rndn = rnd.get();
-          previous_results[k] = 1-rndn; 
-        }
-        output[v] = std::min(1.0, output[v] + (1-output[v])*(_probs.at(k)*output[u]));
-        if (rndn < _probs.at(k))
-        {
-          if (!found[v])
-          {
-            infected.push_back(v);
-            found[v] = true; 
-          }
-        }
+        newg._adjacency_vector.push_back(v);
+        newg._prob_vector.push_back(_prob_vector[i]);
+        ++newg._num_edges;
       }
     }
-    if (clear)
-    {
-      previous_results.clear();
-    }
-    return output; 
+    newg._node_places.push_back(newg._num_edges);
+    return newg; 
   }
 
   void
   Graph::validate()
   { 
-    for (int i = 0; i < _num_nodes;++i)
-    {
-      int u = i;
-      std::set<int> neighbours_a;
-      for (int v: _adjacent[u])
-      {
-        neighbours_a.insert(v);
-      }
-      std::set<int> neighbours_b;
-      for (int j = _node_places[i]; j < _node_places[i+1]; ++j)
-      {
-        int v = _adjacency_vector[j];
-        double prob1 = _probs[Key(u,v)];
-        double prob2 = _prob_vector[j];
-        BOOST_ASSERT(std::abs(prob1-prob2) < 0.000001);
-        neighbours_b.insert(v);
-      }
-      BOOST_ASSERT(neighbours_a == neighbours_b);
-    }
     DEBUG("Validation passed");
-
   }
 }

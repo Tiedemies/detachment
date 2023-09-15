@@ -33,18 +33,25 @@ namespace graph
       ~Graph(void);
 
       // Calculate a single spread pattern
-      std::vector<bool> spread(int, std::unordered_map<size_t,double>&) const;
+      // std::vector<bool> spread(int, std::unordered_map<size_t,double>&) const;
 
       // Calculate a single spread pattern
       int spread_num(int, std::vector<double>&) const;
       //  Calculate activation probabilities for single circle
-      std::vector<double> activation_probs(int,int=1000) const;
+      // std::vector<double> activation_probs(int,int=1000) const;
 
       //  Calculate activation heuristic probabilities for single circle
-      std::vector<double> numeric_spread(int,std::unordered_map<size_t,double>&) const;
+      // std::vector<double> numeric_spread(int,std::unordered_map<size_t,double>&) const;
       // Calculate EPOI, (number of simulations, use initial_probabilities distribtion)
-      double EPOI(int=1000,bool=false,std::vector<double>& =DEFAULT_VECTOR) const; 
-      Graph detach(int, int) const;
+      // double EPOI(int=1000,bool=false,std::vector<double>& =DEFAULT_VECTOR) const; 
+      
+      // Detach and undo. 
+      void detach(int, int);
+      void undo(); 
+
+      // Resolve the detach stack and create a copy that is clean and delete. 
+      Graph clean_copy() const; 
+      
       double get_prob(int,int) const;
       // DMP Epoi
       double DMP_EPOI(bool=false) const;
@@ -68,12 +75,11 @@ namespace graph
       int _num_edges;
       std::vector<std::vector<int>> _circles;
       std::vector<std::vector<int>> _circle_of_node;
-      std::vector<std::unordered_set<int>> _adjacent; 
       std::vector<double> _initial_probabilities; 
-      std::unordered_map<size_t, double> _probs; 
       std::vector<double> _prob_vector; 
       std::vector<int> _adjacency_vector;
       std::vector<int> _node_places;
+      std::vector<std::pair<int,int>> _detachment_stack;
       // Total 6.
 
 
