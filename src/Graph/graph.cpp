@@ -490,4 +490,17 @@ namespace graph
   { 
     DEBUG("Validation passed");
   }
+
+  bool Graph::is_adjacent(int u, int v) const
+  {
+    for (int b = _node_places[u]; b < _node_places[v]; ++b)
+    {
+      if (_adjacency_vector[b] == v)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
 }

@@ -10,12 +10,15 @@
 // Forward declaration
 namespace algo
 {
+  class Optimizer;
   class GreedyOptimizer;
+  class Cutter; 
 }
 
 
 namespace graph
 {
+
   // Graph class supports at most 32 bits
   static std::vector<double> DEFAULT_VECTOR;
   class Graph
@@ -32,39 +35,61 @@ namespace graph
       Graph(const Graph&);
       ~Graph(void);
 
-      // Calculate a single spread pattern
-      // std::vector<bool> spread(int, std::unordered_map<size_t,double>&) const;
-
-      // Calculate a single spread pattern
+      /// @brief a single Monte carlo spread to find a single cascade number of activatiaons
+      /// @param  int: index of the source circle 
+      /// @param  vector<double>& :  A stored vector reference to implement antithetic distribution
+      /// @return int: number of activations
       int spread_num(int, std::vector<double>&) const;
-      //  Calculate activation probabilities for single circle
-      // std::vector<double> activation_probs(int,int=1000) const;
-
-      //  Calculate activation heuristic probabilities for single circle
-      // std::vector<double> numeric_spread(int,std::unordered_map<size_t,double>&) const;
-      // Calculate EPOI, (number of simulations, use initial_probabilities distribtion)
-      // double EPOI(int=1000,bool=false,std::vector<double>& =DEFAULT_VECTOR) const; 
       
-      // Detach and undo. 
+      /// @brief Detach a vertex - circle pair
+      /// @param  int: vertex
+      /// @param  int: circle
       void detach(int, int);
+
+      /// @brief Undo the last detachment
       void undo(); 
 
-      // Resolve the detach stack and create a copy that is clean and delete. 
+      /// @brief Resolve the detachment stack and create a copy of the implemented detachments
+      /// @return A fresh graph with the detachments implemented and a clear cache.
       Graph clean_copy() const; 
       
+      /// @brief Get the probability of transmission u -> v
+      /// @param  int u: vertex index
+      /// @param  int v: vertex index
+      /// @return double p: probability of transmission
       double get_prob(int,int) const;
-      // DMP Epoi
+      
+      /// @brief DMP EPOI calculation
+      /// @param  bool: whether to use a predetermined distribution (false: uniform)
+      /// @return double: the EPOI estimate
       double DMP_EPOI(bool=false) const;
 
-      // Calculate EPOI, (number of simulations, use initial_probabilities distribtion, verbose [i.e., count deviation])
+      /// @brief Numeric (Monte Carlo) calculation of EPOI
+      /// @param  int: Number of simulations per circle
+      /// @param  bool: Whether to use predetermined distribution (false = uniform)
+      /// @param  vector: A vector to store the result vector of the simulations, if none is given, it is omitted
+      /// @return double: The EPOI estimate 
       double EPOI_num(int=1000,bool=false, std::vector<double>& =DEFAULT_VECTOR) const; 
 
-      // Print to file name 
+      // Print to file name
       void print(std::string);
       void printcsv(std::string,bool=false);
 
       // Friends and family
+      friend class algo::Optimizer;
       friend class algo::GreedyOptimizer;
+      friend class algo::Cutter;
+
+      /// @brief Check if two vertices are adjacent
+      /// @param  int u: integer vertex number
+      /// @param  int v: integer vertex number
+      /// @return boolean that tells you if (u,v) is an edge 
+      bool is_adjacent(int,int) const;
+
+      /// @brief Get an iterable of vertices adjacent to u
+      /// @param  int u: integer vertex
+      /// @return const std::vector<int> reference to adjacent vertices
+      std::vector<int> adjacent_to(int) const; 
 
     private:
       

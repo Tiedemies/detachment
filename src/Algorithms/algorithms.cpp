@@ -13,7 +13,17 @@ namespace algo
   static double previous_mu = 0.0;
   static double previous_sigma = 0.0;
 
-  GreedyOptimizer::GreedyOptimizer(graph::Graph& g): _parent(g)
+  Optimizer::Optimizer(const graph::Graph& g): _parent(g)
+  {
+    // void
+  }
+
+  GreedyOptimizer::GreedyOptimizer(const graph::Graph& g) : Optimizer(g)
+  {
+    // void
+  }
+
+  Cutter::Cutter(const graph::Graph& g) : Optimizer(g)
   {
     // void
   }
@@ -72,6 +82,8 @@ namespace algo
     return std::make_pair(mu-delta,mu+delta);
   }
 
+  /// @brief Optimize by finding the best k-detachment with a greedy algorithm
+  /// @param k 
   void
   GreedyOptimizer::optimize(int k)
   {
@@ -115,6 +127,37 @@ namespace algo
       _result_epoi = cur_min; 
       _detached.insert(rpair); 
       _result = _result.clean_copy(); 
+    }
+  }
+
+  /// @brief Optimize to make an n-cut
+  /// @param n 
+  void 
+  Cutter::optimize(int n)
+  {
+    pre_process();
+    
+  }
+
+  void 
+  Cutter::pre_process()
+  {
+    int bridge_to_block = 0;
+    int block_to_bridge = 0;
+    int num_bridges = 0;  
+    for (int c = 0; c < _parent._circles.size(); ++ c)
+    {
+      for (int u: _parent._circles.at(c))
+      {
+        // If the node is in more than one circle, then it is a bridge
+        if (_parent._circle_of_node.at(u).size() > 1)
+        {
+          auto br_bl_n =_bridge_block_edges[u];
+          br_bl_n.push_back(c);
+          auto bl_br_n = _block_bridge_edges[c];
+          bl_br_n.push_back(u);
+        }
+      }
     }
   }
 
