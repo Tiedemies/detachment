@@ -171,6 +171,39 @@ namespace graph
     return output; 
   }
       
+  double 
+  Graph::circle_epoi(int i, int sims, std::vector<double>& num_activated) const
+  {
+    bool verbose = (num_activated.size() == (size_t) sims); 
+    BOOST_ASSERT(0 <= i);
+    BOOST_ASSERT(i < _circles.size());
+    double poi = 0.0;
+    #pragma omp parallel for shared(poi,num_activated)
+    for (int j = 0; j < sims; ++j)
+    {
+      std::vector<double> results;
+      double res = spread_num(i,results);
+      double nn1 = res - _circles.at(i).size();
+      res = spread_num(i,results);
+      double nn2 = res - _circles.at(i).size();
+      double nn = nn1+nn2;
+      double marginal = (nn/2)/((double) (_num_nodes - _circles.at(i).size())); 
+      #pragma omp critical
+      {
+        poi +=  marginal;
+        // DEBUG(nn);
+      }
+      if (verbose)
+      {
+        #pragma omp critical
+        {
+          num_activated.at(j) += marginal/_circles.size();
+        }
+      }
+    }
+    return poi;
+  } 
+
  // Calculate epoi, numbers only 
   double 
   Graph::EPOI_num(int n,bool probs, std::vector<double>& num_activated) const
@@ -184,6 +217,7 @@ namespace graph
     DEBUG("start base simulation, verbose: " << verbose);
     for(int i =0; i < (int) _circles.size(); ++i)
     {
+      /*
       int sims = n;
       total_sims += sims;
       double poi = 0.0;
@@ -210,6 +244,9 @@ namespace graph
           }
         }
       }
+      */
+      double poi = circle_epoi(i,n,num_activated);
+      total_sims+=n;
       epoi += poi;
     }
     epoi = epoi/total_sims;
@@ -374,14 +411,14 @@ namespace graph
     }
   }
   void 
-  Graph::printcsv(std::string fname, bool directed)
+  Graph::printcsv(std::string fname, bool directed) const
   {
     std::ofstream ofs(fname);
     ofs << "source, target, weight \n";
     for (int u = 0; u < _num_nodes; ++u)
     {
       for(int i = _node_places[u];i < _node_places[u+1]; ++i)
-      {
+      {        
         int v = _adjacency_vector[i];
         if (!directed && v > u)
         {
@@ -453,6 +490,7 @@ namespace graph
     }
     _num_nodes = main_component.size(); 
     _circles = std::move(new_circles);
+    DEBUG("Circles after clean up:" <<_circles.size());
   }
 
   Graph

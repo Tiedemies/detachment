@@ -18,9 +18,9 @@ namespace algo
 
 namespace graph
 {
-
-  // Graph class supports at most 32 bits
   static std::vector<double> DEFAULT_VECTOR;
+
+  // Graph class for detacment problem on the stochastic block graphs. 
   class Graph
   {
     public:
@@ -40,6 +40,13 @@ namespace graph
       /// @param  vector<double>& :  A stored vector reference to implement antithetic distribution
       /// @return int: number of activations
       int spread_num(int, std::vector<double>&) const;
+
+      /// @brief Monte Carlo approximation of a single circle epoi upon infection
+      /// @param  int: The circle index
+      /// @param  int: The number of simulations
+      /// @return double: estimated EPOI. 
+      double circle_epoi(int, int = 10000, std::vector<double>& = DEFAULT_VECTOR) const; 
+
       
       /// @brief Detach a vertex - circle pair
       /// @param  int: vertex
@@ -73,7 +80,7 @@ namespace graph
 
       // Print to file name
       void print(std::string);
-      void printcsv(std::string,bool=false);
+      void printcsv(std::string,bool=false) const;
 
       // Friends and family
       friend class algo::Optimizer;

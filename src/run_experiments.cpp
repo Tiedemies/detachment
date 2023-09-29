@@ -31,6 +31,23 @@ void run_test()
   }
 }
 
+void run_cut_test()
+{
+  graph::Graph test1("../data/company_dict_insiders.txt");
+  //graph::Graph test2(105, 10, 0.5);
+  // test1.printcsv("big.csv");
+  algo::Cutter optim(test1);
+  DEBUG("Start max cut optimizer ");
+  optim.optimize();
+  DEBUG("Optimization complete \n");
+  std::cout << "Base: " << optim._base_epoi << ", Optimized: " << optim._result_epoi << "\n";
+  for (auto cpair: optim._detached)
+  {
+      std::cout << "(" << cpair.first << "," << cpair.second << ")";
+  }
+  optim.get_result().printcsv("cut_result.csv");
+}
+
 void speed_test()
 {
   for (int n =10; n < 10001;n=n*10)
@@ -52,6 +69,6 @@ void speed_test()
 
 int main()
 {
-  run_test(); 
+  run_cut_test(); 
   return 0;
 }

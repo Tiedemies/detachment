@@ -18,7 +18,7 @@ namespace algo
       Optimizer() = delete;
       Optimizer(const graph::Graph&);
       void optimize(int=1) = delete;
-      const graph::Graph& get_result();
+      const graph::Graph& get_result() const;
       double _result_epoi; 
       double _base_epoi;
       std::set<std::pair<int,int>> _detached; 
@@ -47,13 +47,40 @@ namespace algo
     protected:
       /// @brief Create an alternative internal representation using block structure
       void pre_process();
+      void initialize_circle_epois();
+      void initialize_division();
+
+      double _sims; 
+      double _max_weight; 
     
       std::unordered_map<int,std::vector<int>> _bridge_block_edges;
       std::unordered_map<int,std::vector<int>> _block_bridge_edges; 
+      std::unordered_map<size_t,double> _bridge_block_probs;
+      std::unordered_map<size_t,double> _block_bridge_probs;
 
-      /// @brief Not using atm 
+      std::vector<double> _circle_epois;
+
+      // SOurces and sinks
+      std::vector<int> _S_blocks;
+      std::vector<int> _T_blocks;
+
+      // @brief Not using atm 
       // std::unordered_map<std::pair<int,int>, double> _bridge_block_probs;
       // std::unordered_map<std::pair<int,int>, double> _block_bridge_probs;
+
+      /// @brief Minimum cut Edmonds Karp
+      /// @return detachment vector
+      std::vector<std::pair<int,int>> min_cut() const;
+      std::vector<std::pair<int,int>> extract_cut(std::unordered_map<size_t, int>&, std::unordered_map<size_t,int>&) const;
+      void initialize_residual(std::unordered_map<size_t, int>&, std::unordered_map<size_t,int>&) const;
+      void update_residual(std::unordered_map<size_t, int>&, std::unordered_map<size_t,int>&,const std::vector<int>&) const;
+
+      std::vector<int> find_aug_path(std::unordered_map<size_t, int>&, std::unordered_map<size_t,int>&) const;
+      size_t Key(int,int) const;
+
+
+      // Debug functions
+      bool verify_connectedness() const;
   };
 
 
