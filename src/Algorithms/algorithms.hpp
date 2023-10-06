@@ -22,7 +22,8 @@ namespace algo
       double _result_epoi; 
       double _base_epoi;
       std::set<std::pair<int,int>> _detached; 
-      void set_iterations();
+      void set_iterations(int);
+      int _sims; 
     protected:
       void pre_process();
       const graph::Graph& _parent; 
@@ -50,7 +51,7 @@ namespace algo
       void initialize_circle_epois();
       void initialize_division();
 
-      double _sims; 
+
       double _max_weight; 
     
       std::unordered_map<int,std::vector<int>> _bridge_block_edges;

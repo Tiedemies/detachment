@@ -25,6 +25,12 @@ namespace algo
     // void
   }
 
+  void
+  Optimizer::set_iterations(int sims)
+  {
+    _sims = sims;
+  }
+
   GreedyOptimizer::GreedyOptimizer(const graph::Graph& g) : Optimizer(g)
   {
     // void
@@ -192,7 +198,7 @@ namespace algo
         std::cerr << e.what() << '\n';
         throw e;
       }
-      DEBUG(" path " << count);
+      DEBUG("Path " << count << ", size " << path.size());
     }
     return extract_cut(LR_res,RL_res);
   }
@@ -306,7 +312,6 @@ namespace algo
   void
   Cutter::initialize_circle_epois()
   {
-    _sims = 100;
     _circle_epois.clear();
     _circle_epois.resize(_parent._circles.size(),0.0);
     for (int c = 0; c < _parent._circles.size();++c)
@@ -359,7 +364,7 @@ namespace algo
       int v = path[i+1];
       size_t k = Key(u,v);
       BOOST_ASSERT(res.find(k) != res.end());
-      double cap = res.at(Key(u,v));
+      double cap = res.at(k);
       if (cap < min_cap)
       {
         min_cap = cap;
@@ -392,7 +397,7 @@ namespace algo
   {
     _max_weight = 0.0;
     int num_bridges = 0;
-    int max = 0;
+    int max = 1;
     for(auto c:_parent._circles)
     {
       max = std::max(max, (int)c.size());
@@ -417,8 +422,8 @@ namespace algo
           br_bl_n.push_back(c);
           auto& bl_br_n = _block_bridge_edges[c];
           bl_br_n.push_back(u);
-          double lwcu = max-_parent._circles.at(c).size();
-          DEBUG(lwcu);
+          double lwcu = max - _parent._circles.at(c).size();
+          //DEBUG(lwcu);
           _max_weight = std::max(_max_weight,lwcu);
           _bridge_block_probs[Key(u,c)] = lwcu;
           _block_bridge_probs[Key(c,u)] = lwcu;         
@@ -434,23 +439,24 @@ namespace algo
   {
     const int s = _S_blocks[0];
     const int t = _T_blocks[0];
-    std::queue<int> R_queue;
-    R_queue.push(s);
-    std::queue<int> L_queue ;
+    std::queue<int> L_queue;
+    L_queue.push(s);
+    std::queue<int> R_queue ;
     std::unordered_map<int,int> RL_pred;
     std::unordered_map<int,int> LR_pred;
-    RL_pred[s] = -1;
-    bool R_turn = true;
+    LR_pred[s] = -1;
+    bool L_turn = true;
 
-    while (!(R_queue.empty() && R_turn) && !(L_queue.empty() && !R_turn))
+    while (!(L_queue.empty() && L_turn) && !(R_queue.empty() && !L_turn))
     {
-      auto& Q = R_turn?R_queue:L_queue;
-      auto& Q2 = R_turn?L_queue:R_queue; 
+      auto& Q = L_turn?L_queue:R_queue;
+      auto& Q2 = L_turn?R_queue:L_queue; 
       int u = Q.front();
       Q.pop();
-      const auto& neighbour = R_turn?_bridge_block_edges:_block_bridge_edges;
-      auto& pred = R_turn?LR_pred:RL_pred;
-      const auto res = R_turn?RL_res:LR_res; 
+      const auto& neighbour = L_turn?_block_bridge_edges:_bridge_block_edges;
+      auto& pred = L_turn?RL_pred:LR_pred;
+      const auto res = L_turn?LR_res:RL_res; 
+      BOOST_ASSERT(neighbour.find(u) != neighbour.end());
       for (auto v: neighbour.at(u))
       {
         // Skip edges with zero residual capacity
@@ -468,11 +474,11 @@ namespace algo
       // if the current queue is empty, flip. 
       if (Q.empty())
       {
-        R_turn = !R_turn;
+        L_turn = !L_turn;
       }
     }
     // We assume t was not found.
-    BOOST_ASSERT(RL_pred.find(t) == RL_pred.end());
+    BOOST_ASSERT(LR_pred.find(t) == LR_pred.end());
     std::vector<std::pair<int,int>> result;
     for (auto nbr: _bridge_block_edges)
     {

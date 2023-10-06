@@ -63,7 +63,7 @@ namespace graph
   // Random graph generation. 
   // Model: n vertices, r circles, uniform random (one vertex per circle guaranteed). 
   // 0 <= p < 1 is a connection coefficient. p == 0 results in a block graph, theoretically p=1 is fully connected. 
-  Graph::Graph(int n, int r, double p)
+  Graph::Graph(int n, int r, double p): _num_nodes(n)
   {
     BOOST_ASSERT(n > r);
     BOOST_ASSERT(0 <= p && p < 0.95);
@@ -76,12 +76,14 @@ namespace graph
     {
       _circles[i].push_back(i);
     }
+    DEBUG("Vertices initialized");
     // Rest are evenly distributed
     for(int i = r; i < n; ++i)
     {
-      int j = (int) rnd_circle.get();
+      int j = static_cast<int>(rnd_circle.get());
       _circles[j].push_back(i);
     }
+    DEBUG("Vertices distributed");
     // Then we generate a tree:
     for (int i = 1; i < r; ++i)
     {
@@ -90,23 +92,27 @@ namespace graph
       int k = _circles[i][index];
       _circles[j].push_back(k);
     }
-    for (int i = 0; i < r; ++i)
+    DEBUG("Tree Generated");
+    if (p > 0.001)
     {
-      while (rnd_seed.get() < p)
+      for (int i = 0; i < r; ++i)
       {
-        int j = (int) rnd_circle.get();
-        if (i == j)
+        while (rnd_seed.get() < p)
         {
-          continue;
+          int j = (int) rnd_circle.get();
+          if (i == j)
+          {
+            continue;
+          }
+          int index = ((int) (_circles[i].size()*rnd_seed.get()));
+          int k = _circles[i][index];
+          if (find(_circles[j].begin(), _circles[j].end(),k) != _circles[j].end())
+          {
+            continue;
+          }
+          _circles[j].push_back(k);
+          //DEBUG("created a connection \n");
         }
-        int index = ((int) (_circles[i].size()*rnd_seed.get()));
-        int k = _circles[i][index];
-        if (find(_circles[j].begin(), _circles[j].end(),k) != _circles[j].end())
-        {
-          continue;
-        }
-        _circles[j].push_back(k);
-        DEBUG("created 1\n");
       }
     }
     instantiate();
@@ -343,6 +349,7 @@ namespace graph
   void
   Graph::instantiate()
   {
+    DEBUG("Instantiationg adjacency lists for " << _num_nodes << " nodes");
     _circle_of_node.clear();
     _circle_of_node.resize(_num_nodes);
     std::vector<std::vector<int>> adjacent(_num_nodes); 
