@@ -23,10 +23,10 @@ namespace algo
   Optimizer::Optimizer(const graph::Graph& g): _parent(g)
   {
     // void
-    #ifndef DNDEBUG
-    _sims = 10;
-    #else
+    #ifdef NDEBUG
     _sims = 10000;
+    #else
+    _sims = 10;
     #endif
   }
 
