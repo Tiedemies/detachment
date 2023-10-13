@@ -15,8 +15,8 @@
 
 int main()
 {
-  //Run the debug test
-  test::run_test2();
+  //Run the comparison test
+  test::Run_comparative_tests();
   
   return 0;
 }
