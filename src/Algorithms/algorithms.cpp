@@ -23,6 +23,11 @@ namespace algo
   Optimizer::Optimizer(const graph::Graph& g): _parent(g)
   {
     // void
+    #ifndef DNDEBUG
+    _sims = 10;
+    #else
+    _sims = 10000;
+    #endif
   }
 
   void
@@ -100,7 +105,7 @@ namespace algo
   void
   GreedyOptimizer::optimize(int k)
   {
-    const int base_sim = 10000;
+    const int base_sim = _sims;
     // Initialize a copy.
     const int n = _parent._num_nodes;
     DEBUG("working with " << n << " nodes");
@@ -116,7 +121,7 @@ namespace algo
     _detached.clear(); 
     for (int i = 0; i < k; ++i)
     {
-      std::pair<int,int> rpair; 
+      std::pair<int,int> rpair = std::make_pair(-1,-1);; 
       for (int j = 0; j < n; ++ j)
       {
         // Never try to remove one that is in only one circle.
@@ -135,6 +140,11 @@ namespace algo
           }
           _result.undo(); 
         }
+      }
+      if (rpair.first == -1)
+      {
+        DEBUG("No more detachments possible");
+        break;
       }
       _result.detach(rpair.first,rpair.second);
       _result_epoi = cur_min; 

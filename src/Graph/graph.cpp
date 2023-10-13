@@ -264,16 +264,20 @@ namespace graph
   void 
   Graph::detach(int u, int C)
   {
+    DEBUG("Detaching " << u << " from " << C);
+    DEBUG("Detacment stack size: " << _detachment_stack.size());
     BOOST_ASSERT(C >= 0);
     BOOST_ASSERT(u >= 0);
     BOOST_ASSERT(C < _circles.size());
     BOOST_ASSERT(u < _num_nodes);
+    /*
     auto c_iter = std::find(_circles.at(C).begin(),_circles.at(C).end(),u);
-    BOOST_ASSERT( c_iter != _circles.at(C).end());
+    BOOST_ASSERT(c_iter != _circles.at(C).end());
     auto cn_iter = std::find(_circle_of_node.at(u).begin(),_circle_of_node.at(u).end(),C);
     BOOST_ASSERT(cn_iter != _circle_of_node.at(u).end());
     _circles.at(C).erase(c_iter);
     _circle_of_node.at(u).erase(cn_iter);
+    */
     _detachment_stack.push_back(std::make_pair(u,C));
     for (int v: _circles[C])
     {
@@ -309,25 +313,37 @@ namespace graph
     int C = fpair.second;
     for (int v: _circles[C])
     {
+      if (v == u) continue;
+      // If v is a detached vertex, then don't back down!
+      if (std::find(_detachment_stack.begin(), _detachment_stack.end(), std::make_pair(v,C)) != _detachment_stack.end())
+      {
+        continue;
+      }
+      bool found = false;
       for (int i = _node_places[v]; i < _node_places[v+1];++i)
       {
         if (_adjacency_vector[i] == -u)
         {
+          found = true;
           _adjacency_vector[i] = u;
           break;
         }
       }
+      found = false;
       for (int i = _node_places[u]; i < _node_places[u+1]; ++i)
       {
         if (_adjacency_vector[i] == -v)
         {
+          found = true;
           _adjacency_vector[i] = v;
           break;
         }
       }
     }
+    /*
     _circles[C].push_back(u);
     _circle_of_node[u].push_back(C);
+    */
   }
 
   // Probability (defunct now)
@@ -510,7 +526,28 @@ namespace graph
     newg._prob_vector.clear();
     newg._node_places.clear();
     newg._circles = _circles;
-    newg._circle_of_node = _circle_of_node; 
+    newg._circle_of_node = _circle_of_node;
+    for (auto d_pair: _detachment_stack)
+    {
+      int u = d_pair.first;
+      int C = d_pair.second;
+      auto c_iter = std::find(newg._circles.at(C).begin(),newg._circles.at(C).end(),u);
+      if (c_iter == newg._circles.at(C).end())
+      {
+        std::cerr << "Circle: " << C << ", removing " << u << "\n";
+        for (auto v: newg._circles.at(C))
+        {
+            std::cerr << v << " ";
+        }
+        std::cerr << "\n";
+      }
+      BOOST_ASSERT(c_iter != newg._circles.at(C).end());
+      auto cn_iter = std::find(newg._circle_of_node.at(u).begin(),newg._circle_of_node.at(u).end(),C);
+      BOOST_ASSERT(cn_iter != newg._circle_of_node.at(u).end());
+      newg._circles.at(C).erase(c_iter);
+      newg._circle_of_node.at(u).erase(cn_iter);
+    }
+
     for (int u = 0; u < _num_nodes; ++u)
     {
       newg._node_places.push_back(newg._num_edges);
