@@ -68,8 +68,10 @@ namespace graph
       
       /// @brief DMP EPOI calculation
       /// @param  bool: whether to use a predetermined distribution (false: uniform)
+      /// @param  vector: A vector to store the result vector of the simulations, if none is given, it is omitted
       /// @return double: the EPOI estimate
       double DMP_EPOI(bool=false) const;
+      std::vector<double> RunDMP(const std::vector<int>&) const;
 
       /// @brief Numeric (Monte Carlo) calculation of EPOI
       /// @param  int: Number of simulations per circle
@@ -97,10 +99,15 @@ namespace graph
       /// @param  int u: integer vertex
       /// @return const std::vector<int> reference to adjacent vertices
       std::vector<int> adjacent_to(int) const; 
+      int Get_num_nodes() const;
 
     private:
       
       size_t Key(const int&, const int&) const; 
+      // inverse Key
+      std::pair<int,int> InvKey(const size_t&) const;
+
+      int EdgeIndex(const int&, const int&) const;
       
       // Copyable attributes:
       int _num_nodes;

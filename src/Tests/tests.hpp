@@ -9,7 +9,7 @@ namespace test
   void generate_graphs();
 
   /// Run experiments for different algorithms
-  void Run_comparative_tests();
+  void Run_comparative_tests(int max_nodes = -1);
 
   /// Run a single test for the company data
   void Run_company_test();

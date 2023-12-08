@@ -49,7 +49,7 @@ namespace algo
       /// @brief Create an alternative internal representation using block structure
       void pre_process();
       void initialize_circle_epois();
-      void initialize_division();
+      void initialize_division(int k = 1);
 
 
       double _max_weight; 

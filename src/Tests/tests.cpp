@@ -117,7 +117,7 @@ namespace test
   }
 
   /// Run experiments for different algorithms
-  void Run_comparative_tests()
+  void Run_comparative_tests(int max_nodes)
   {
     // Iterate over all files with .txt extension in data folder
     std::vector<std::string> files = util::get_files("../data/", ".txt");
@@ -125,7 +125,11 @@ namespace test
     {
       // Load graph
       graph::Graph g("../data/" + file);
-
+      if (max_nodes > 0 && g.Get_num_nodes() > max_nodes)
+      {
+        continue;
+      }
+      DEBUG("Running test for " << file);
       // Run cut optimizer
       algo::Cutter cut(g);
       cut.set_iterations(10000);
@@ -138,13 +142,15 @@ namespace test
 
 
       // Save results, but preface the filename with the algorithm name and replace the extension with .csv
-      std::string cutfilename = "../results/cut_" + file.substr(8, file.size() - 11) + ".csv";
-      std::string greedyfilename = "../results/greedy_" + file.substr(8, file.size() - 11) + ".csv";
+      std::string cutfilename = "../results/cut_" + file.substr(8, file.size() - 11) + "csv";
+      std::string greedyfilename = "../results/greedy_" + file.substr(8, file.size() - 11) + "csv";
+      std::string originalfilename = "../results/original_" + file.substr(8, file.size() - 11) + "csv";
       // Print the results to the files
+      g.printcsv(originalfilename);
       cut.get_result().printcsv(cutfilename);
       greedy.get_result().printcsv(greedyfilename);
       // Save the result epoi and the base epoi to a file with the same name but with .num extension
-      std::string numfilename = "../results/" + file.substr(8, file.size() - 11) + ".num";
+      std::string numfilename = "../results/" + file.substr(8, file.size() - 11) + "num";
       std::ofstream numfile(numfilename);
       // Prevace the result with n, the number of connections cut
       numfile << n << "," << cut._result_epoi << "," << cut._base_epoi << "," << greedy._result_epoi << "," << greedy._base_epoi << "\n";

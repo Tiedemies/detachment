@@ -26,7 +26,7 @@ namespace algo
     #ifdef NDEBUG
     _sims = 10000;
     #else
-    _sims = 10;
+    _sims = 40;
     #endif
   }
 
@@ -186,12 +186,17 @@ namespace algo
   std::vector<std::pair<int,int>> 
   Cutter::min_cut() const
   {
+    // If T and S are the same, do nothing:
+    if (_S_blocks == _T_blocks)
+    {
+      return std::vector<std::pair<int,int>>();
+    }
     std::unordered_map<size_t, int> LR_res;
     std::unordered_map<size_t, int> RL_res;
     bool ff = verify_connectedness();
     BOOST_ASSERT(ff);
     auto path = find_aug_path(LR_res, RL_res);
-    int count = 0;
+    int count = 1;
     DEBUG("first path found:" << path.size());
     while (!path.empty())
     {
@@ -241,7 +246,7 @@ namespace algo
       auto& Q2 = L_turn?R_queue:L_queue; 
       int u = Q.front();
       Q.pop();
-      // DEBUG( (L_turn?"Circle:":"Bridge:") << u);
+      DEBUG( (L_turn?"Circle:":"Bridge:") << u);
       const auto& neighbour = L_turn?_block_bridge_edges:_bridge_block_edges;
       auto& pred = L_turn?RL_pred:LR_pred;
       const auto res = L_turn?LR_res:RL_res; 
@@ -254,7 +259,7 @@ namespace algo
         BOOST_ASSERT(res.find(k) != res.end());
         if (res.at(k) == 0)
         {
-          // DEBUG("Skipped: " << u << "->" << v);
+          DEBUG("Skipped: " << u << "->" << v);
           continue;
         }
         if (pred.find(v) != pred.end())
@@ -263,7 +268,7 @@ namespace algo
         }
         pred[v] = u;
         // Did we take t out of the L-queue?
-        if (L_turn && v == t)
+        if (!L_turn && v == t)
         {
           found = true;
           break;
@@ -331,13 +336,32 @@ namespace algo
   }
 
   void 
-  Cutter::initialize_division()
+  Cutter::initialize_division(int k)
   {
+    BOOST_ASSERT(k >= 1);
+    BOOST_ASSERT(k <= _parent._circles.size());
+    if (_circle_epois.empty())
+    {
+      initialize_circle_epois();
+    }
+    if (_parent._circles.size() == 1)
+    {
+      _S_blocks.push_back(0);
+      _T_blocks.push_back(0);
+      return;
+    }
     double max_epoi = 0.0;
     int max_index = -1;
     int second_index = -1;
     double second_epoi = 0.0;
+    // Initialize block indices to contain numbers 0 to n-1
+    std::vector<int> block_indices(_parent._circles.size());
+    std::iota(block_indices.begin(), block_indices.end(), 0);
  
+    // Sort the indices by epoi
+    std::sort(block_indices.begin(), block_indices.end(), [this](int i, int j){return _circle_epois[i] > _circle_epois[j];});
+  
+    /*
     for (int c = 0; c < _parent._circles.size(); ++c)
     {
       if (_circle_epois[c] >= max_epoi)
@@ -352,13 +376,27 @@ namespace algo
         second_epoi = _circle_epois[c];
       }
     }
-    BOOST_ASSERT(second_index >= 0);
+    */
+  
     // Currently just s = max, t = second max
     _S_blocks.clear();
     _T_blocks.clear();
-    _S_blocks.push_back(max_index);
-    _T_blocks.push_back(second_index);
-
+    // Assign at least k elements to S and T so that they have different elements while greedily trying to balance the total epoi:
+    double T_epoi = 0.0;
+    double S_epoi = 0.0;
+    for (int i = 0; i < k || T_epoi < 0.001 || S_epoi < 0.001; ++i)
+    {
+      if (T_epoi < S_epoi)
+      {
+        _T_blocks.push_back(block_indices[i]);
+        T_epoi += _circle_epois[block_indices[i]];
+      }
+      else
+      {
+        _S_blocks.push_back(block_indices[i]);
+        S_epoi += _circle_epois[block_indices[i]];
+      }
+    }
   }
 
   void 
@@ -449,6 +487,11 @@ namespace algo
   {
     const int s = _S_blocks[0];
     const int t = _T_blocks[0];
+    // if s == t, return an empty cut:
+    if (s == t)
+    {
+      return std::vector<std::pair<int,int>>();
+    }
     std::queue<int> L_queue;
     L_queue.push(s);
     std::queue<int> R_queue ;

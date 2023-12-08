@@ -6,6 +6,7 @@
 #include<unordered_map>
 #include<set>
 #include<algorithm>
+#include<queue>
 #include "../Utils/grandom.h"
 #include "../Utils/utils.hpp"
 
@@ -161,7 +162,8 @@ namespace graph
     {
       int u = infected.back();
       infected.pop_back();
-       for (int j = _node_places[u];j <_node_places[u+1];++j)
+      // Iterate over the adjacent vertices
+      for (int j = _node_places[u];j <_node_places[u+1];++j)
       {
         int v = _adjacency_vector[j];
         if (v < 0 || found[v]) continue;
@@ -259,6 +261,171 @@ namespace graph
     return epoi;  
   }
 
+std::vector<double> 
+Graph::RunDMP(const std::vector<int>& inside) const
+{
+  const double epsilon = 0.0000001;
+  const int n = _num_nodes;
+  const double err_thres = n*epsilon;
+
+  // Pi_j is as follows: Pi_j[j] contains (i, p') when p(i->j) = p' I.e. Pj_i[j] contains *incoming* 
+  // messages from i to j 
+  std::vector<std::vector<int>> Pi_j(n);
+  std::vector<std::vector<int>> Pi_j_prev(n);
+  std::unordered_map<size_t, double> messages;
+  std::unordered_map<size_t, double> messages_prev;
+  // Marginal probabilities
+  std::vector<double> P0(n,0.0);
+  std::vector<double> Marginals(n,0.0);
+  std::vector<double> Marginals_prev(n,0.0);
+  std::queue<int> Waiting;
+  std::vector<bool> Wait(n,false);
+  for (int u = 0; u < n; ++u)
+  {
+    // Instantiate inside
+    if(std::find(inside.begin(), inside.end(), u) != inside.end())
+    {
+      P0[u] = 1.0; 
+      Marginals_prev[u] = 1.0;
+      // Iterate over adjacent vertices
+      for (int j = _node_places[u];j <_node_places[u+1];++j)
+      {
+        int v = _adjacency_vector[j];
+        if (v < 0) continue;
+        messages_prev[Key(u,v)] = 1.0;
+      } 
+    }
+    // Instantiate other
+    else
+    {
+      // Iterate over adjacent vertices:
+      for (int j = _node_places[u];j <_node_places[u+1];++j)
+      {
+        int v = _adjacency_vector[j];
+        if (v < 0) continue;     
+        messages_prev[Key(u,v)] = 0.0;
+      }
+    }
+  }
+  double err = (double) n;
+  int iter = 0;
+  while (err > err_thres && iter < n)
+  {
+    err = 0.0;
+    ++iter; 
+    for (int u = 0; u < n; ++u)
+    {
+      double p_co = 1-P0[u];
+      // Iterate over adjacent vertices:
+      for (int j = _node_places[u];j <_node_places[u+1];++j)
+      {
+        int v = _adjacency_vector[j];
+        auto msp = messages_prev.find(Key(v,u));
+        if (msp == messages_prev.end())
+        {
+          continue;
+        }
+        p_co*=(1.0 - (_prob_vector.at(j)*msp->second));
+      }
+      Marginals[u] = std::max(Marginals_prev[u], 1-p_co);
+      err += std::abs(Marginals[u] - Marginals_prev[u]);
+      Marginals_prev[u] = Marginals[u];
+    }
+    for (auto k_pair: messages_prev)
+    {
+      auto nodes = InvKey(k_pair.first);
+      int u = nodes.first;
+      int v = nodes.second;
+      double m_p = 0.0;
+      double temp_p = 0.0;
+      int j = EdgeIndex(u,v); 
+      BOOST_ASSERT(j >= 0);
+      try
+      {
+        temp_p = 1.0 - _prob_vector[j]*messages_prev[Key(v,u)];
+      }
+      catch(const std::exception& e)
+      {
+        std::cerr << "Pmap or message fail" << '\n';
+        std::cerr << "Kpair; " << k_pair.first << "\n";
+        std::cerr << "v: " << v << ", u: " << u << "\n";
+        throw e;
+      }
+      if (temp_p < epsilon)
+      {
+        m_p = 1.0 - P0[u];  
+        for (int l = _node_places[v]; l < _node_places[v+1];++l)
+        {
+          int w = _adjacency_vector[l];
+          // Skip backward edges
+          if (w == u)
+          {
+            continue;
+          }
+          // If there is no connection or, if there is no message
+          auto l_it = messages_prev.find(Key(w,v));
+          int m = EdgeIndex(w,v);
+          BOOST_ASSERT(m >= 0);
+          if (_prob_vector[m] < epsilon ||  l_it == messages_prev.end())
+          {
+            continue;
+          }
+          m_p *= (1 - (_prob_vector[m]*l_it->second)); 
+        }
+        m_p = 1.0 - m_p; 
+      }
+      else
+      {
+        m_p = 1.0 - (1.0 - Marginals[u])/temp_p; 
+      }
+      messages[k_pair.first] = std::max(m_p, k_pair.second);
+      err += std::abs(messages[k_pair.first] - k_pair.second);
+    }
+    messages_prev = messages;
+  } 
+  return Marginals;
+}
+
+  double
+  Graph::DMP_EPOI(bool probs) const
+  {
+    // Use the DMP algorithm
+    // Iterate over all circles:
+    double epoi = 0.0;
+    for (int i = 0; i < (int) _circles.size(); ++i)
+    {
+      // Create a vector of inside vertices:
+      std::vector<int> inside = _circles.at(i);
+      const auto marginals = RunDMP(inside);
+      // Add together all marginals:
+      double current_epoi = std::accumulate(marginals.begin(), marginals.end(), 0.0);
+      // Subtract the marginals of the inside set:
+      for (int j: inside)
+      {
+        current_epoi -= marginals[j];
+      }
+      // Divide by the number of outside vertices:
+      current_epoi = current_epoi/((double) (_num_nodes - inside.size()));
+      // Add to epoi:
+      epoi += current_epoi;
+    }
+    return epoi/((double) _circles.size()); 
+  }
+
+  int 
+  Graph::EdgeIndex(const int& u, const int& v) const
+  {
+    int index = -1;
+    for (int i = _node_places[u]; i < _node_places[u+1]; ++i)
+    {
+      if (_adjacency_vector[i] == v)
+      {
+        index = i;
+        break;
+      }
+    }
+    return index;
+  }
     
   // Detachment operator
   void 
@@ -273,7 +440,7 @@ namespace graph
     /*
     auto c_iter = std::find(_circles.at(C).begin(),_circles.at(C).end(),u);
     BOOST_ASSERT(c_iter != _circles.at(C).end());
-    auto cn_iter = std::find(_circle_of_node.at(u).begin(),_circle_of_node.at(u).end(),C);
+    auto cn_iter = std::find(_circle_of_node.aEPOI_numt(u).begin(),_circle_of_node.at(u).end(),C);
     BOOST_ASSERT(cn_iter != _circle_of_node.at(u).end());
     _circles.at(C).erase(c_iter);
     _circle_of_node.at(u).erase(cn_iter);
@@ -361,6 +528,14 @@ namespace graph
     return (size_t) (( (size_t) u << 32) | (unsigned int) v);
   }
 
+  // Inverse key for the probability matrix
+  std::pair<int,int>
+  Graph::InvKey(const size_t& k) const
+  {
+    int u = (int) (k >> 32);
+    int v = (int) (k & 0xFFFFFFFF);
+    return std::make_pair(u,v);
+  }
 
   void
   Graph::instantiate()
@@ -583,6 +758,11 @@ namespace graph
       }
     }
     return false;
+  }
+
+  int Graph::Get_num_nodes() const
+  {
+    return _num_nodes;
   }
 
 }
