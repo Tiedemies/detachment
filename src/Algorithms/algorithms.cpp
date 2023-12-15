@@ -329,7 +329,7 @@ namespace algo
   {
     _circle_epois.clear();
     _circle_epois.resize(_parent._circles.size(),0.0);
-    for (int c = 0; c < _parent._circles.size();++c)
+    for (size_t c = 0; c < _parent._circles.size();++c)
     {
       _circle_epois[c] = _parent.circle_epoi(c, _sims);
     }
@@ -339,7 +339,7 @@ namespace algo
   Cutter::initialize_division(int k)
   {
     BOOST_ASSERT(k >= 1);
-    BOOST_ASSERT(k <= _parent._circles.size());
+    BOOST_ASSERT(k <= (int) _parent._circles.size());
     if (_circle_epois.empty())
     {
       initialize_circle_epois();
@@ -350,10 +350,10 @@ namespace algo
       _T_blocks.push_back(0);
       return;
     }
-    double max_epoi = 0.0;
-    int max_index = -1;
-    int second_index = -1;
-    double second_epoi = 0.0;
+    [[maybe_unused]] double max_epoi = 0.0;
+    [[maybe_unused]] int max_index = -1;
+    [[maybe_unused]] int second_index = -1;
+    [[maybe_unused]] double second_epoi = 0.0;
     // Initialize block indices to contain numbers 0 to n-1
     std::vector<int> block_indices(_parent._circles.size());
     std::iota(block_indices.begin(), block_indices.end(), 0);
@@ -381,7 +381,7 @@ namespace algo
     // Currently just s = max, t = second max
     _S_blocks.clear();
     _T_blocks.clear();
-    // Assign at least k elements to S and T so that they have different elements while greedily trying to balance the total epoi:
+    // Assign at least k elements to S and T each so that they have different elements while greedily trying to balance the total epoi:
     double T_epoi = 0.0;
     double S_epoi = 0.0;
     for (int i = 0; i < k || T_epoi < 0.001 || S_epoi < 0.001; ++i)
@@ -405,7 +405,7 @@ namespace algo
     DEBUG("Updating");
     bool L_turn = true;
     int min_cap = 2; 
-    for (int i = 0; i < path.size()-1; ++i)
+    for (size_t i = 0; i < path.size()-1; ++i)
     {
       const auto& res = L_turn?LR_res:RL_res;
       int u = path[i];
@@ -421,10 +421,10 @@ namespace algo
     }
     DEBUG("min cap" << min_cap);
     BOOST_ASSERT(min_cap > 0);
-    for (int i = 0; i < path.size()-1; ++i)
+    for (size_t i = 0; i < path.size()-1; ++i)
     {
       auto& res = L_turn?LR_res:RL_res;
-      auto& other = L_turn?RL_res:LR_res;
+      // auto& other = L_turn?RL_res:LR_res;
       int u = path[i];
       int v = path[i+1];
       res[Key(u,v)]-= min_cap;
@@ -452,13 +452,13 @@ namespace algo
     }
     ++max; 
 
-    for (int c = 0; c < _parent._circles.size(); ++c)
+    for (size_t c = 0; c < _parent._circles.size(); ++c)
     {
       _block_bridge_edges[c].clear();
-      for (int u: _parent._circles.at(c))
+      for (size_t u: _parent._circles.at(c))
       {
         BOOST_ASSERT(0 <= u);
-        BOOST_ASSERT(u <= _parent._num_nodes);
+        BOOST_ASSERT((int) u <=  _parent._num_nodes);
         // If the node is in more than one circle, then it is a bridge
         if (_parent._circle_of_node.at(u).size() > 1)
         {
@@ -554,7 +554,7 @@ namespace algo
   Cutter::verify_connectedness() const
   {
     int s = 0;
-    int num_found = 1;
+    [[maybe_unused]] int num_found = 1;
     std::vector<bool> found_C(_parent._circles.size(), false);
     std::vector<bool> found_R(_parent._num_nodes, false);
     std::vector<int> Stack_C;
@@ -581,7 +581,7 @@ namespace algo
         is_C = !is_C;
       }
     }
-    for (int i = 0; i < _parent._circles.size();++i)
+    for (size_t i = 0; i < _parent._circles.size();++i)
     {
       if(!found_C[i])
       {

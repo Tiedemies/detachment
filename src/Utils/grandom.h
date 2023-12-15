@@ -45,5 +45,23 @@ namespace util{
       RNDGenerator rand_gen_;
       std::uniform_real_distribution<double> dis1_;
   };
+
+  // xhi squared random variable 
+  class ChiSquaredRandom
+  {
+    typedef boost::random::mt19937 RNDGenerator;
+    typedef boost::math::chi_squared_distribution<> ChiDist;
+    public:
+      ChiSquaredRandom() = delete;
+      ChiSquaredRandom(double n);
+      ~ChiSquaredRandom();
+      double get();
+    private:
+      ChiDist dist_;
+      RNDGenerator rand_gen_;
+      std::uniform_real_distribution<double> dis1_;
+  }; 
+  
+
 }
 #endif

@@ -16,7 +16,7 @@
 int main()
 {
   //Run the comparison test
-  test::Run_comparative_tests(100);
+  test::Run_comparative_tests(300);
   
   return 0;
 }

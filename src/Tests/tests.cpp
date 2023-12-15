@@ -132,7 +132,7 @@ namespace test
       DEBUG("Running test for " << file);
       // Run cut optimizer
       algo::Cutter cut(g);
-      cut.set_iterations(10000);
+      cut.set_iterations(100);
       cut.optimize();
       int n = cut._detached.size();     
 
