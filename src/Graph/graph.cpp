@@ -121,7 +121,7 @@ namespace graph
   }
 
   // Copy constructor to make a copy
-  Graph::Graph(const Graph& rhs): _num_nodes(rhs._num_nodes), _circles(rhs._circles), _circle_of_node(rhs._circle_of_node), _adjacency_vector(rhs._adjacency_vector), _node_places(rhs._node_places),_prob_vector(rhs._prob_vector)
+  Graph::Graph(const Graph& rhs): _num_nodes(rhs._num_nodes), _circles(rhs._circles), _circle_of_node(rhs._circle_of_node), _adjacency_vector(rhs._adjacency_vector), _node_places(rhs._node_places), _prob_vector(rhs._prob_vector)
   {
     // Void
   }
@@ -220,7 +220,7 @@ namespace graph
     double epoi = 0.0;
     
     // If verbose, we use numbers activated 
-    bool verbose = (num_activated.size() == (size_t) n); 
+    [[maybe_unused]] bool verbose = (num_activated.size() == (size_t) n); 
     
     DEBUG("start base simulation, verbose: " << verbose);
     for(int i =0; i < (int) _circles.size(); ++i)
@@ -486,7 +486,7 @@ Graph::RunDMP(const std::vector<int>& inside) const
       {
         continue;
       }
-      bool found = false;
+      [[maybe_unused]] bool found = false;
       for (int i = _node_places[v]; i < _node_places[v+1];++i)
       {
         if (_adjacency_vector[i] == -u)
@@ -544,7 +544,7 @@ Graph::RunDMP(const std::vector<int>& inside) const
     _circle_of_node.clear();
     _circle_of_node.resize(_num_nodes);
     std::vector<std::vector<int>> adjacent(_num_nodes); 
-    for (int i = 0; i < _circles.size(); ++i)
+    for (size_t i = 0; i < _circles.size(); ++i)
     {
       auto c = _circles[i];
       for (int u: c)
@@ -585,9 +585,9 @@ Graph::RunDMP(const std::vector<int>& inside) const
     for (int u = 0; u < _num_nodes;++u)
     {
       size_t end = (u < _num_nodes - 1)?_node_places[u+1]:_num_edges;
-      for(int j = _node_places[u]; j < end; ++j)
+      for(int j = _node_places[u]; j < (int) end; ++j)
       {
-        int v = _adjacency_vector[j];
+        // int v = _adjacency_vector[j];
         _prob_vector[j] = rnd.get();
       }
     }
@@ -666,9 +666,9 @@ Graph::RunDMP(const std::vector<int>& inside) const
     // main_component now contains all. 
     std::unordered_map<int,int> num_map;
     std::set<int> main_cset;
-    for (int i = 0; i < main_component.size(); ++i)
+    for (size_t i = 0; i < main_component.size(); ++i)
     {
-      num_map[main_component[i]] = i;
+      num_map[main_component[i]] = (int) i;
     }
     std::vector<std::vector<int>> new_circles; 
     for (auto c: _circles)

@@ -113,7 +113,7 @@ namespace algo
     DEBUG("establishing baseline");
     _base_epoi = _parent.EPOI_num(2*base_sim, false, result);
     DEBUG("calculating intervals");
-    const auto ref_interval = confidence_intervals(result,0.99);
+    [[maybe_unused]] const auto ref_interval = confidence_intervals(result,0.99);
     double cur_min = _base_epoi; 
     DEBUG("base interval established " << ref_interval.first << " -- " << _base_epoi << " -- " << ref_interval.second);
     _result = _parent;
@@ -193,7 +193,7 @@ namespace algo
     }
     std::unordered_map<size_t, int> LR_res;
     std::unordered_map<size_t, int> RL_res;
-    bool ff = verify_connectedness();
+    [[maybe_unused]] bool ff = verify_connectedness();
     BOOST_ASSERT(ff);
     auto path = find_aug_path(LR_res, RL_res);
     int count = 1;
