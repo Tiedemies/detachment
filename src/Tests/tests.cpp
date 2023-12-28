@@ -20,7 +20,7 @@ namespace test
   // Run single test for the company data
   void run_test()
   {
-    graph::Graph test1("../data/company_dict_insiders.txt");
+    graph::Graph test1("../data/empirical.txt");
     //graph::Graph test2(105, 10, 0.5);
     // test1.printcsv("big.csv");
     algo::GreedyOptimizer optim(test1);
@@ -114,6 +114,32 @@ namespace test
         }
       }
     }
+  }
+
+  void Run_test(std::string filename, std::string result_handle, int num_iterations) 
+  {
+    // Run the cut algorithm and the greedy algorithm on the graph in filename:
+    graph::Graph g(filename);
+    algo::Cutter cut(g);
+    cut.set_iterations(num_iterations);
+    cut.optimize();
+    int n = cut._detached.size();
+    algo::GreedyOptimizer greedy(g);
+    greedy.set_iterations(num_iterations);
+    greedy.optimize(n);
+    // Save the results to a file with the same name but with .csv extension
+    std::string cutfilename = "../results/cut_" + result_handle + ".csv";
+    std::string greedyfilename = "../results/greedy_" + result_handle + ".csv";
+    std::string originalfilename = "../results/original_" + result_handle + ".csv";
+    // Print the results to the files
+    g.printcsv(originalfilename);
+    cut.get_result().printcsv(cutfilename);
+    greedy.get_result().printcsv(greedyfilename);
+    // Save the result epoi and the base epoi to a file with the same name but with .num extension
+    std::string numfilename = "../results/" + result_handle + ".num";
+    std::ofstream numfile(numfilename);
+    // Prevace the result with n, the number of connections cut
+    numfile << n << "," << cut._result_epoi << "," << cut._base_epoi << "," << greedy._result_epoi << "," << greedy._base_epoi << "\n";
   }
 
   /// Run experiments for different algorithms

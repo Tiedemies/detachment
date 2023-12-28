@@ -1,5 +1,6 @@
 #ifndef TESTS_HPP
 #define TESTS_HPP
+#include<string>
 
 // The header file for the tests, for each function in tests.cpp there is a declaration here
 // The functions are defined in tests.cpp
@@ -25,6 +26,8 @@ namespace test
 
   // A debugging test
   void run_test2();
+
+  void Run_test(std::string filename, std::string result_handle, int iterations = 100);
 }
 
 #endif // TESTS_HPP

@@ -16,7 +16,7 @@
 int main()
 {
   //Run the comparison test
-  test::Run_comparative_tests(300);
-  
+  // test::Run_comparative_tests(300);
+  test::Run_test("../data/empirical.txt","../data/empirical", 10000);
   return 0;
 }

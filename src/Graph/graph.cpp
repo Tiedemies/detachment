@@ -261,6 +261,8 @@ namespace graph
     return epoi;  
   }
 
+
+
 std::vector<double> 
 Graph::RunDMP(const std::vector<int>& inside) const
 {
